@@ -1,0 +1,17 @@
+﻿{
+    "name": "__MSG_extName__",
+    "description": "__MSG_extDescription__", 
+    "version": "0.1",
+    "manifest_version": 2,
+    "default_locale": "ja",
+    "options_page": "options.html",
+    "background" : {
+      "scripts": [
+        "public/javascripts/background.js",
+        "public/javascripts/config.js"
+      ]
+    },
+    "permissions": [
+      "tabs"
+    ]
+}

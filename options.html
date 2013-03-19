@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Options</title>
+    <script type="text/javascript" src="public/javascripts/options.js"></script>
+    <style type="text/css">
+        <!--
+        ul {
+            list-style-type: none;
+        }
+        -->
+    </style>
+</head>
+<body>
+
+<h2>Tab Config Options</h2>
+
+<div class="open_tabTitleText"></div>
+<ul>
+    <li><input type="radio" name="open_pos" value="first"><span class="firstText"> </span></li>
+    <li><input type="radio" name="open_pos" value="left"><span class="open_tab_currentText"></span><span class="leftText"></span></li>
+    <li><input type="radio" name="open_pos" value="right"><span class="open_tab_currentText"></span><span class="rightText"></span></li>
+    <li><input type="radio" name="open_pos" value="last"><span class="lastText"></span></li>
+    <li><input type="radio" name="open_pos" value="default" checked><span class="defaultText"></span></li>
+</ul>
+
+<div class="close_tabTitleText"></div>
+<ul>
+    <li><input type="radio" name="close_focus" value="first"><span class="firstText"></span></li>
+    <li><input type="radio" name="close_focus" value="left"><span class="close_tab_currentText"></span><span class="leftText"></span></li>
+    <li><input type="radio" name="close_focus" value="right"><span class="close_tab_currentText"></span><span class="rightText"></span></li>
+    <li><input type="radio" name="close_focus" value="last"><span class="lastText"></span></li>
+    <li><input type="radio" name="close_focus" value="default" checked><span class="defaultText"></span></li>
+</ul>
+
+<div class="otherTitleText"></div>
+<ul>
+    <li><input name="other_domain_open" type="checkbox"><span class="other_domain_openText"></span></li>
+    <li><input name="popup_window_is_open_tab" type="checkbox"><span class="popup_window_is_open_tabText"></span></li>
+</ul>
+
+</body>
+</html>
+

@@ -1,0 +1,62 @@
+{
+  "extName": {
+    "message": "Tab Config",
+    "description": "Extension Name"
+  },
+  "extDescription": {
+    "message": "タブの動作を設定します。",
+    "description": "Extension Work"
+  },
+  "open_tabTitle": {
+    "message": "タブを開く位置",
+    "description": "head in Options."
+  },
+  "close_tabTitle": {
+    "message": "タブを閉じた後のフォーカス",
+    "description": "head in Options."
+  },
+  "otherTitle": {
+    "message": "その他",
+    "description": "head in Options."
+  },
+  "default": {
+    "message": "デフォルト",
+    "description": "default"
+  },
+  "first": {
+    "message": "最初",
+    "description": "First"
+  },
+  "left": {
+    "message": "左",
+    "description": "Left"
+  },
+  "right": {
+    "message": "右",
+    "description": "Right"
+  },
+  "last": {
+    "message": "最後",
+    "description": "Last"
+  },
+  "open_tab_current": {
+    "message": "現在のタブの",
+    "description": "Part of item in Options page."
+  },
+  "close_tab_current": {
+    "message": "閉じたタブの",
+    "description": "Part of item in Options page."
+  },
+  "other_domain_open": {
+    "message": "別ドメインを新しいタブで開く",
+    "description": "Item in Options page."
+  },
+  "exclude_url": {
+    "message": "除外するアドレス(正規表現)",
+    "description": "Item in Options page."
+  },
+  "popup_window_is_open_tab": {
+    "message": "ポップアップウィンドウはタブで開く",
+    "description": "Item in Options page."
+  }
+}
