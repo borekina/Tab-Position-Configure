@@ -1,1 +1,1 @@
-zip package.zip src *.html manifest.json
+zip -r package.zip _locales css public *.html manifest.json

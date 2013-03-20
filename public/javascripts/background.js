@@ -1,31 +1,30 @@
 /**
-* この拡張機能外のスクリプトを使って行う初期化処理 
-* @return なし
-*/
+ * Init is Run to initialize.
+ */
 function Init()
 {
-    console.log("Extension Initialized.");
+    console.log('Extension Initialized.');
 }
 
 /**
- * 拡張機能がインストールされたときの処理
- * @return なし
+ * onInstall is Run to Install.
  */
 function onInstall() {
-    console.log("Extension Installed.");
+    console.log('Extension Installed.');
+    // オプションを表示
+    chrome.tabs.create({ url: '../../options.html' });
 }
 
 /**
- * 拡張機能がアップデートされたときの処理
- * @return なし
+ * onUpdate is Run to Extension Update.
  */
 function onUpdate() {
-    console.log("Extension Updated.");
+    console.log('Extension Updated.');
 }
 
 /**
- * 拡張機能のバージョンを返す
- * @return {String} 拡張機能のバージョン
+ * Return extension version.
+ * @return {Number} extension version.
  */
 function getVersion() {
     var details = chrome.app.getDetails();

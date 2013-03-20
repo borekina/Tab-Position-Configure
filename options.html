@@ -1,24 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Options</title>
+    <script type="text/javascript" src="public/javascripts/common.js"></script>
     <script type="text/javascript" src="public/javascripts/options.js"></script>
-    <style type="text/css">
-        <!--
-        ul {
-            list-style-type: none;
-        }
-        -->
-    </style>
+    <link rel="stylesheet" href="css/options.css" type="text/css" media="screen" charset="utf-8">
 </head>
 <body>
 
-<h2>Tab Config Options</h2>
+<h2><span class="extNameText"></span>&nbsp;<span class="optionText"></span></h2>
 
 <div class="open_tabTitleText"></div>
 <ul>
-    <li><input type="radio" name="open_pos" value="first"><span class="firstText"> </span></li>
+    <li><input type="radio" name="open_pos" value="first"><span class="firstText"></span></li>
     <li><input type="radio" name="open_pos" value="left"><span class="open_tab_currentText"></span><span class="leftText"></span></li>
     <li><input type="radio" name="open_pos" value="right"><span class="open_tab_currentText"></span><span class="rightText"></span></li>
     <li><input type="radio" name="open_pos" value="last"><span class="lastText"></span></li>
@@ -37,9 +32,58 @@
 <div class="otherTitleText"></div>
 <ul>
     <li><input name="other_domain_open" type="checkbox"><span class="other_domain_openText"></span></li>
-    <li><input name="popup_window_is_open_tab" type="checkbox"><span class="popup_window_is_open_tabText"></span></li>
+    <li style="margin-left: 1em;">
+        <div><span class="exclude_urlText"></span><a class="open_tool" href='#'><span class="regex_toolText"></span></a></div>
+        <textarea id="exclude_url" name="exclude_url" rows="8" cols="50" wrap="off" style="float: left"></textarea>
+        <div class="optionText"></div>
+        <ul>
+            <li><input type="checkbox" name="domain_regopt_insensitive"><span class="regex_confuseText"></span></li>
+        </ul>
+    </li>
+    <li style="clear: left"><input name="popup_window_is_open_tab" type="checkbox"><span class="popup_window_is_open_tabText"></span></li>
+    <li style="margin-left: 1em;"><div class="exclude_urlText"></div>
+        <textarea id="popup_exclude_url" name="popup_exclude_url" rows="8" cols="50" wrap="off" style="float: left"></textarea>
+        <div class="optionText"></div>
+        <ul>
+            <li><input type="checkbox" name="popup_regopt_insensitive"><span class="regex_confuseText"></span></li>
+        </ul>
+    </li>
+    <li style="clear: left"></li>
 </ul>
+
+<div>
+    <button id="save">Save</button>
+    <button id="load">Load</button>
+    <button id="init">Init</button>
+</div>
+
+<span id="status"></span>
+
+<!-- 正規表現確認ツール -->
+<div id="tool_box">
+    <button class="close_btn open_tool">×</button>
+    <div id="regexp">
+        <div class="regexText"></div>
+        /<input type="text" name="regular_expression">/<input type="text" name="options" size="2" maxlength="3">
+    </div>
+    <div class="regex_compare_stringText"></div>
+    <textarea id="compare_string" name="compare_string"></textarea>
+    <span id="result"><span class="regex_result"></span></span>
+    <div id="clear"></div>
+    <div id="reference_area">
+        <div class="regex_referenceText"></div>
+        <div id="regex_reference"></div>
+    </div>
+    <div id="reference_option_area">
+        <div class="regex_option_referenceText"></div>
+        <div id="regex_option_reference"></div>
+
+        <div id="information_area">
+            <div class="regex_informationText"></div>
+            <div class="regex_refURLText"></div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
-

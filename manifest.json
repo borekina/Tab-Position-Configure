@@ -1,16 +1,28 @@
 ﻿{
     "name": "__MSG_extName__",
-    "description": "__MSG_extDescription__", 
-    "version": "0.1",
+    "description": "__MSG_extDescription__",
+    "version": "1.0.0",
     "manifest_version": 2,
-    "default_locale": "ja",
+    "default_locale": "en",
     "options_page": "options.html",
     "background" : {
       "scripts": [
+        "public/javascripts/common.js",
         "public/javascripts/background.js",
-        "public/javascripts/config.js"
+        "public/javascripts/tabclass.js",
+        "public/javascripts/config.js",
+        "public/javascripts/content_onmessage.js"
       ]
     },
+    "content_scripts": [
+      {
+        "matches": [ "http://*/*", "https://*/*" ],
+        "js": [
+          "public/javascripts/common.js",
+          "public/javascripts/content_scripts.js"
+        ]
+      }
+    ],
     "permissions": [
       "tabs"
     ]

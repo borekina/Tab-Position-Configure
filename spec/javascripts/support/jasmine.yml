@@ -11,7 +11,7 @@
 #   - dist/**/*.js
 #
 src_files:
-    - public/javascripts/**/*.js
+    - 'public/javascripts/**/*.js'
 
 # stylesheets
 #
@@ -83,6 +83,6 @@ spec_dir:
 #
 # spec_helper: spec/support/jasmine_helper.rb
 #
-spec_helper: spec/support/jasmine_helper.rb
+spec_helper: 'spec/support/jasmine_helper.rb'
 
 
