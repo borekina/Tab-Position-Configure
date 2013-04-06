@@ -10,7 +10,9 @@ if (!default_values) {
             'google.(co.jp|com)',
         'domain_regopt_insensitive_checkbox': true,
         'popup_window_is_open_tab_checkbox': true,
-        'popup_exclude_url_textarea': 'chrome[\\w-]*://',
+        'popup_exclude_url_textarea':
+            'chrome[\\w-]*://\n' +
+            '*.feedly.com',
         'popup_regopt_insensitive_checkbox': true
     };
 }
