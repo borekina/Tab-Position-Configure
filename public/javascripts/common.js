@@ -3,13 +3,13 @@ if (!default_values) {
     var default_values = {
         'open_pos_radio': 'default',
         'close_focus_radio': 'default',
-        'other_domain_open_checkbox': true,
+        'other_domain_open_checkbox': false,
         'exclude_url_textarea':
         '(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +
             'localhost\n' +
             'google.(co.jp|com)',
         'domain_regopt_insensitive_checkbox': true,
-        'popup_window_is_open_tab_checkbox': true,
+        'popup_window_is_open_tab_checkbox': false,
         'popup_exclude_url_textarea':
             'chrome[\\w-]*://\n' +
             '*.feedly.com',
