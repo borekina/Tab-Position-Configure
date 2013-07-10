@@ -1,10 +1,14 @@
 var lastFocusWindowId = undefined;
 var tabIds = new TabIdList();
-var tabHistory = new TabIdHistory();
+var focusTabHistory = new TabIdHistory();
 
 // When using MovingTab, because it is also called chrome.tabs.onMoved,
 // it is used to prevent changes to the double.
 var created = false;
+
+// This become true after using ClosedFocusTab,.
+// Then be calling chrome.tabs.onActivated. and you should false in it.
+var afterClosedFocusTab = false;
 
 /* functions */
 function MovingTab(TabIdHistory, moveOptions, callback)
@@ -121,6 +125,8 @@ function ClosedTabFocus(TabIdList, TabIdHistory, focusOptions, callback)
   }
   // error check end.
 
+  afterClosedFocusTab = true; // flag
+
   switch (state) {
     case 'first':
       chrome.tabs.update(TabIdList.get({ windowId: windowId, index: 0 }),
@@ -154,7 +160,7 @@ function ClosedTabFocus(TabIdList, TabIdHistory, focusOptions, callback)
       break;
     case 'right':
       var index = closedTabPosition < TabIdList.length(windowId) ?
-                  closedTabPosition : TabIdList.length(windowId) - 1;
+                  closedTabPosition + 1 : TabIdList.length(windowId) - 1;
       chrome.tabs.update(TabIdList.get({ windowId: windowId, index: index }),
           { active: true }, function(tab) {
             if (getType(callback) == 'function') {
@@ -164,7 +170,7 @@ function ClosedTabFocus(TabIdList, TabIdHistory, focusOptions, callback)
       );
       break;
     case 'lastSelect':
-      var previousId = tabHistory.lastPrevious(windowId, 2);
+      var previousId = TabIdHistory.lastPrevious(windowId, 2);
       chrome.tabs.update(previousId, { active: true }, function(tab) {
         if (getType(callback) == 'function') {
           callback(tab);
@@ -213,7 +219,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
   }
   if (getType(callback) != 'function') {
     throw new Error('Invalid argument. ' +
-    'Third argument is not callback functions.');
+                    'Third argument is not callback functions.');
   }
 
   if (whileOptions.startIndex >= tabs.length) {
@@ -251,7 +257,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
     var state = localStorage[storageName] ? localStorage[storageName] :
                                             default_values[storageName];
     created = true;
-    MovingTab(tabHistory,
+    MovingTab(focusTabHistory,
               { windowId: tab.windowId,
                 tabId: tab.id,
                 index: tab.index,
@@ -261,12 +267,6 @@ chrome.tabs.onCreated.addListener(function(tab) {
             windowId: moveTab.windowId,
             index: moveTab.index,
             tabId: moveTab.id
-          });
-
-          // 履歴更新、バックグラウンドで開いた際に必要
-          chrome.tabs.getSelected(tab.windowId, function(currentTab) {
-            tabHistory.add({
-              windowId: currentTab.windowId, tabId: currentTab.id });
           });
         }
     );
@@ -283,9 +283,9 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   var state = localStorage[storageName] ? localStorage[storageName] :
                                           default_values[storageName];
   var found = tabIds.find({ windowId: windowId, tabId: tabId });
-  if (tabHistory.lastPrevious(windowId) == tabId) {
+  if (focusTabHistory.lastPrevious(windowId) == tabId) {
     ClosedTabFocus(tabIds,
-                   tabHistory,
+                   focusTabHistory,
                    { windowId: windowId,
                      closedTabPosition: found.index,
                      state: state });
@@ -296,7 +296,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     throw new Error('no match is removeTabid and tabId.');
   }
   tabIds.remove({ windowId: windowId, tabId: removeTabId });
-  tabHistory.remove({ windowId: windowId, tabId: removeTabId });
+  focusTabHistory.remove({ windowId: windowId, tabId: removeTabId });
 });
 
 chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
@@ -313,7 +313,13 @@ chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
 });
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  tabHistory.add({ windowId: activeInfo.windowId, tabId: activeInfo.tabId });
+  if (afterClosedFocusTab) {
+    afterClosedFocusTab = false;
+    return;
+  }
+
+  focusTabHistory.update(
+      { windowId: activeInfo.windowId, tabId: activeInfo.tabId });
 });
 
 chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
@@ -322,6 +328,7 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
     index: attachInfo.newPosition,
     tabId: tabid
   });
+  focusTabHistory.update({ windowId: attachInfo.windowId, tabId: tabId });
 });
 
 chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
@@ -332,12 +339,12 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
   var oldWindowId = detachInfo.oldWindowId;
   var oldPosition = detachInfo.oldPosition;
   ClosedTabFocus(tabIds,
-                 tabHistory,
+                 focusTabHistory,
                  { windowId: oldWindowId,
                    closedTabPosition: oldPosition,
                    state: state });
   tabIds.remove({ windowId: oldWindowId, tabId: tabId });
-  tabHistory.remove({ windowId: oldWindowId, tabId: tabId });
+  focusTabHistory.remove({ windowId: oldWindowId, tabId: tabId });
 });
 
 chrome.windows.onFocusChanged.addListener(function(windowId) {
@@ -376,7 +383,7 @@ chrome.windows.onCreated.addListener(function(window) {
 });
 
 chrome.windows.onRemoved.addListener(function(windowId) {
-  tabHistory.remove({ windowId: windowId });
+  focusTabHistory.remove({ windowId: windowId });
   tabIds.remove({ windowId: windowId });
 });
 
@@ -384,12 +391,11 @@ chrome.windows.getAll({ populate: true }, function(windows) {
   for (var i = 0; i < windows.length; i++) {
     var windowId = windows[i].id;
     for (var j = 0; j < windows[i].tabs.length; j++) {
-      tabIds.add({ windowId: windowId, tabId: windows[i].tabs[j].id });
+      var tabId = windows[i].tabs[j].id;
+      tabIds.add({ windowId: windowId, tabId: tabId });
     }
     chrome.tabs.getSelected(windowId, function(tab) {
-      for (var z = 0; z < tabHistory.maxlength; z++) {
-        tabHistory.add({ windowId: windowId, tabId: tab.id });
-      }
+      focusTabHistory.update({ windowId: windowId, tabId: tab.id });
     });
   }
 });
