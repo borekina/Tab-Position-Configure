@@ -40,8 +40,8 @@
     "description": "Last"
   },
   "lastSelect": {
-    "message": "Last select tab",
-    "description": "Last select tab"
+    "message": "Last used tab",
+    "description": "Last used tab"
   },
   "option": {
     "message": "Option",
