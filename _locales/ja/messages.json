@@ -39,6 +39,10 @@
     "message": "最後",
     "description": "Last"
   },
+  "lastSelect": {
+    "message": "最後に選択したタブ",
+    "description": "Last select tab"
+  },
   "option": {
     "message": "オプション",
     "description": "Option"

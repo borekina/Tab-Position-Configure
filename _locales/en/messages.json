@@ -39,6 +39,10 @@
     "message": "Last",
     "description": "Last"
   },
+  "lastSelect": {
+    "message": "Last select tab",
+    "description": "Last select tab"
+  },
   "option": {
     "message": "Option",
     "description": "Option"

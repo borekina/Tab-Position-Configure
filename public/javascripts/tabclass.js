@@ -212,15 +212,20 @@ TabIdHistory.prototype.get = function(getOptions) {
 
     return this.history[windowId][index];
 };
-TabIdHistory.prototype.lastPrevious = function(windowId) {
+TabIdHistory.prototype.lastPrevious = function(windowId, gap) {
     if (getType(windowId) != 'number') {
         throw new Error('Invalid argument. First argument is not number type');
+    }
+    if (gap == undefined || gap == null) {
+      gap = 1;
+    } else if (getType(windowId) != 'number') {
+        throw new Error('Invalid argument. Second argument is not number type');
     }
     if (getType(this.history[windowId]) == 'undefined') {
         throw new Error('History is not found windowId object.');
     }
 
-    var index = this.history[windowId].length - 1;
+    var index = this.history[windowId].length - gap;
     index = index > 0 ? index : 0;
     return this.history[windowId][index];
 };

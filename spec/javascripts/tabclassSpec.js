@@ -177,6 +177,8 @@ describe('TabIdHistory class', function() {
 
         // lastPrevious
         expect(instance.lastPrevious(windowId)).toEqual(2);
+        expect(instance.lastPrevious(windowId, 2)).toEqual(1);
+        expect(instance.lastPrevious(windowId, 3)).toEqual(1);
     });
 
     it('call update', function() {
