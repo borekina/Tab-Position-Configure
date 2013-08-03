@@ -10,8 +10,7 @@
         "public/javascripts/common.js",
         "public/javascripts/background.js",
         "public/javascripts/tabclass.js",
-        "public/javascripts/config.js",
-        "public/javascripts/content_onmessage.js"
+        "public/javascripts/config.js"
       ]
     },
     "content_scripts": [
@@ -24,6 +23,6 @@
       }
     ],
     "permissions": [
-      "tabs"
+      "tabs", "storage"
     ]
 }

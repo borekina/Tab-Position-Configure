@@ -175,7 +175,8 @@ TabIdList.prototype.find = function(findOptions) {
 TabIdList.prototype.length = function(windowId) {
   if (getType(windowId) == 'undefined') {
     var i = 0;
-    for (; this.data[i] != undefined; i++) { }
+    for (; this.data[i] != undefined; i++) {
+    }
     return i;
   } else if (getType(windowId) == 'number') {
     return this.data[windowId].length;

@@ -132,15 +132,15 @@ describe('TabIdHistory class', function() {
 
     it('call add', function() {
         expect(instance.history[windowId]).toBeUndefined();
-        expect(instance.add({ windowId: windowId, tabId: 0 })).toEqual(0);
-        expect(instance.add({ windowId: windowId, tabId: 1 })).toEqual(1);
-        expect(instance.add({ windowId: windowId, tabId: 2 })).toEqual(2);
+        expect(instance.update({ windowId: windowId, tabId: 0 })).toEqual(0);
+        expect(instance.update({ windowId: windowId, tabId: 1 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 2 })).toEqual(2);
         expect(instance.history[windowId].length).toEqual(3);
     });
 
     it('call remove', function() {
-        expect(instance.add({ windowId: windowId, tabId: 0 })).toEqual(0);
-        expect(instance.add({ windowId: windowId, tabId: 1 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 0 })).toEqual(0);
+        expect(instance.update({ windowId: windowId, tabId: 1 })).toEqual(1);
 
         // remove
         instance.remove({ windowId: windowId, tabId: 0 });
@@ -152,8 +152,8 @@ describe('TabIdHistory class', function() {
     });
 
     it('call get', function() {
-        expect(instance.add({ windowId: windowId, tabId: 0 })).toEqual(0);
-        expect(instance.add({ windowId: windowId, tabId: 1 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 0 })).toEqual(0);
+        expect(instance.update({ windowId: windowId, tabId: 1 })).toEqual(1);
 
         expect(instance.get({ windowId: windowId, index: 1 })).toEqual(1);
         expect(function() {
@@ -162,8 +162,8 @@ describe('TabIdHistory class', function() {
     });
 
     it('call getlastPrevious', function() {
-        expect(instance.add({ windowId: windowId, tabId: 1 })).toEqual(0);
-        expect(instance.add({ windowId: windowId, tabId: 2 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 1 })).toEqual(0);
+        expect(instance.update({ windowId: windowId, tabId: 2 })).toEqual(1);
 
         // lastPrevious
         expect(instance.lastPrevious(windowId)).toEqual(2);
@@ -172,16 +172,15 @@ describe('TabIdHistory class', function() {
     });
 
     it('call update', function() {
-        expect(instance.add({ windowId: windowId, tabId: 0 })).toEqual(0);
-        expect(instance.add({ windowId: windowId, tabId: 1 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 0 })).toEqual(0);
+        expect(instance.update({ windowId: windowId, tabId: 1 })).toEqual(1);
+        expect(instance.update({ windowId: windowId, tabId: 2 })).toEqual(2);
 
         expect(function() {
-            instance.update({ windowId: windowId, index: 5, tabId: 5 });
+            instance.update({ windowId: windowId, tabId: 2 });
+        }).not.toThrow();
+        expect(function() {
+            instance.update({ windowId: windowId, index: 5 });
         }).toThrow();
-
-        var index = 0;
-        expect(instance.update({
-               windowId: windowId, index: index, tabId: 5 })).toEqual(0);
-        expect(instance.history[windowId][index]).toEqual(5);
     });
 });

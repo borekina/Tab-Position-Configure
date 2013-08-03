@@ -253,23 +253,25 @@ chrome.tabs.onCreated.addListener(function(tab) {
   if (tabIds.isEmpty(tab.windowId)) {
     tabIds.add({ windowId: tab.windowId, tabId: tab.id });
   } else {
-    var storageName = 'open_pos_radio';
-    var state = localStorage[storageName] ? localStorage[storageName] :
-                                            default_values[storageName];
-    created = true;
-    MovingTab(focusTabHistory,
-              { windowId: tab.windowId,
-                tabId: tab.id,
-                index: tab.index,
-                state: state },
-              function(moveTab) {
-          tabIds.insert({
-            windowId: moveTab.windowId,
-            index: moveTab.index,
-            tabId: moveTab.id
-          });
-        }
-    );
+    chrome.storage.local(null, function(items) {
+      var storageName = 'open_pos_radio';
+      var state = items[storageName] ? items[storageName] :
+                                       default_values[storageName];
+      created = true;
+      MovingTab(focusTabHistory,
+                { windowId: tab.windowId,
+                  tabId: tab.id,
+                  index: tab.index,
+                  state: state },
+                function(moveTab) {
+            tabIds.insert({
+              windowId: moveTab.windowId,
+              index: moveTab.index,
+              tabId: moveTab.id
+            });
+          }
+      );
+    });
   }
 });
 
@@ -279,24 +281,26 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   }
   var windowId = removeInfo.windowId;
 
-  var storageName = 'close_focus_radio';
-  var state = localStorage[storageName] ? localStorage[storageName] :
-                                          default_values[storageName];
-  var found = tabIds.find({ windowId: windowId, tabId: tabId });
-  if (focusTabHistory.lastPrevious(windowId) == tabId) {
-    ClosedTabFocus(tabIds,
-                   focusTabHistory,
-                   { windowId: windowId,
-                     closedTabPosition: found.index,
-                     state: state });
-  }
+  chrome.storage.local.get(null, function(items) {
+    var storageName = 'close_focus_radio';
+    var state = items[storageName] ? items[storageName] :
+                                     default_values[storageName];
+    var found = tabIds.find({ windowId: windowId, tabId: tabId });
+    if (focusTabHistory.lastPrevious(windowId) == tabId) {
+      ClosedTabFocus(tabIds,
+                     focusTabHistory,
+                     { windowId: windowId,
+                       closedTabPosition: found.index,
+                       state: state });
+    }
 
-  var removeTabId = tabIds.get({ windowId: windowId, index: found.index });
-  if (removeTabId != tabId) {
-    throw new Error('no match is removeTabid and tabId.');
-  }
-  tabIds.remove({ windowId: windowId, tabId: removeTabId });
-  focusTabHistory.remove({ windowId: windowId, tabId: removeTabId });
+    var removeTabId = tabIds.get({ windowId: windowId, index: found.index });
+    if (removeTabId != tabId) {
+      throw new Error('no match is removeTabid and tabId.');
+    }
+    tabIds.remove({ windowId: windowId, tabId: removeTabId });
+    focusTabHistory.remove({ windowId: windowId, tabId: removeTabId });
+  });
 });
 
 chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
@@ -332,19 +336,21 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
 });
 
 chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
-  var storageName = 'open_focus_radio';
-  var state = localStorage[storageName] ? localStorage[storageName] :
-                                          default_values[storageName];
+  chrome.storage.local.get(null, function(items) {
+    var storageName = 'open_focus_radio';
+    var state = items[storageName] ? items[storageName] :
+                                     default_values[storageName];
 
-  var oldWindowId = detachInfo.oldWindowId;
-  var oldPosition = detachInfo.oldPosition;
-  ClosedTabFocus(tabIds,
-                 focusTabHistory,
-                 { windowId: oldWindowId,
-                   closedTabPosition: oldPosition,
-                   state: state });
-  tabIds.remove({ windowId: oldWindowId, tabId: tabId });
-  focusTabHistory.remove({ windowId: oldWindowId, tabId: tabId });
+    var oldWindowId = detachInfo.oldWindowId;
+    var oldPosition = detachInfo.oldPosition;
+    ClosedTabFocus(tabIds,
+                   focusTabHistory,
+                   { windowId: oldWindowId,
+                     closedTabPosition: oldPosition,
+                     state: state });
+    tabIds.remove({ windowId: oldWindowId, tabId: tabId });
+    focusTabHistory.remove({ windowId: oldWindowId, tabId: tabId });
+  });
 });
 
 chrome.windows.onFocusChanged.addListener(function(windowId) {
@@ -352,34 +358,36 @@ chrome.windows.onFocusChanged.addListener(function(windowId) {
 });
 
 chrome.windows.onCreated.addListener(function(window) {
-  var storageName = 'popup_window_is_open_tab_checkbox';
-  var state = localStorage[storageName] ?
-              localStorage[storageName] :
-              default_values[storageName].toString();
-  if (window.type == 'popup' && state == 'true') {
-    chrome.windows.get(window.id, { populate: true }, function(window) {
-      var storageName = 'popup_exclude_url_textarea';
-      var exclude = getType(localStorage[storageName]) == 'string' ?
-                    localStorage[storageName] : default_values[storageName];
+  chrome.storage.local.get(null, function(items) {
+    var storageName = 'popup_window_is_open_tab_checkbox';
+    var state = items[storageName] ?
+                items[storageName] :
+                default_values[storageName];
+    if (window.type == 'popup' && state == true) {
+      chrome.windows.get(window.id, { populate: true }, function(window) {
+        var storageName = 'popup_exclude_url_textarea';
+        var exclude = getType(items[storageName]) == 'string' ?
+                      items[storageName] : default_values[storageName];
 
-      var storageName = 'popup_regopt_insensitive_checkbox';
-      var excludeOption = localStorage[storageName] ?
-                          localStorage[storageName] :
-                          default_values[storageName].toString();
-      excludeOption = excludeOption == 'true' ? 'i' : '';
-      WhileUrlOpen(window.tabs,
-                   { windowId: lastFocusWindowId,
-                     startIndex: 0,
-                     exclude: exclude.split('\n'),
-                     excludeOption: excludeOption },
-                   function(closed) {
-            if (closed) {
-              chrome.windows.remove(window.id);
+        var storageName = 'popup_regopt_insensitive_checkbox';
+        var excludeOption = items[storageName] ?
+                            items[storageName] :
+                            default_values[storageName];
+        excludeOption = excludeOption == true ? 'i' : '';
+        WhileUrlOpen(window.tabs,
+                     { windowId: lastFocusWindowId,
+                       startIndex: 0,
+                       exclude: exclude.split('\n'),
+                       excludeOption: excludeOption },
+                     function(closed) {
+              if (closed) {
+                chrome.windows.remove(window.id);
+              }
             }
-          }
-      );
-    });
-  }
+        );
+      });
+    }
+  });
 });
 
 chrome.windows.onRemoved.addListener(function(windowId) {

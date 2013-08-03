@@ -1,4 +1,46 @@
+var chrome = null;
 describe('Options Function', function() {
+    beforeEach(function() {
+      chrome = {
+        storage: {
+          local: {
+            data: {
+              'open_pos_radio': 'default',
+              'close_focus_radio': 'default',
+              'other_domain_open_checkbox': false,
+              'exclude_url_textarea':
+      '(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +
+                  'localhost\n' +
+                  'google.(co.jp|com)',
+            },
+            get: function(getValues, callback) {
+              if (getType(getValues) != 'object') {
+                throw new Error('chrome.storage.local.get mock error.');
+              }
+              if (getType(callback) != 'function') {
+                throw new Error('chrome.storage.local.get mock error.' +
+                                ' callback is not function.');
+              }
+
+              var returnData = new Object();
+              for (var key in getValues) {
+                returnData[key] = this.data[key];
+              }
+
+              callback(returnData);
+            },
+            set: function(setObject, callback) {
+              for (var key in setObject) {
+                this.data[key] = setObject[key];
+              }
+
+              callback();
+            }
+          }
+        }
+      };
+    });
+
     it('Load Settings', function() {
         loadFixtures('../../options.html');
 
@@ -9,30 +51,37 @@ describe('Options Function', function() {
         var values = {
             'open_pos_radio': 'default',
             'close_focus_radio': 'default',
-            'other_domain_open_checkbox': true,
+            'other_domain_open_checkbox': false,
             'exclude_url_textarea':
-        '(10.\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\d{1,3}.\d{1,3}\n' +
+    '(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +
                 'localhost\n' +
                 'google.(co.jp|com)',
-            'popup_window_is_open_tab_checkbox': false
         };
-        var values = LoadValues(document, values);
-        expect(values).toEqual([
+        LoadValues(document, values, function(debugList) {
+          expect(debugList).toEqual([
             'open_pos',
             'close_focus',
             'other_domain_open',
             'exclude_url',
-            'popup_window_is_open_tab'
-        ]);
+          ]);
+        });
     });
 
     it('Save Settings', function() {
         loadFixtures('../../options.html');
 
-        var debug = SaveValues();
-        // 最初の要素は空白の要素。evaluteを使った時になぜか入る。
-        // loadFixturesが原因？
-        expect(debug.length).toEqual(12);
+        var values = {
+            'open_pos_radio': 'default',
+            'close_focus_radio': 'default',
+            'other_domain_open_checkbox': false,
+            'exclude_url_textarea':
+    '(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +
+                'localhost\n' +
+                'google.(co.jp|com)',
+        };
+        SaveValues(values, function(debug) {
+          expect(debug.length).toEqual(4);
+        });
     });
 
     it('Initalize Settings', function() {

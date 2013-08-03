@@ -3,6 +3,7 @@ var locale_i18n = [
   'extName',
   'open_tabTitle', 'close_tabTitle', 'otherTitle',
   'default', 'first', 'left', 'right', 'last', 'lastSelect', 'option',
+  'export', 'import',
   'open_tab_current', 'close_tab_current', 'other_domain_open',
   'exclude_url', 'popup_exclude_url',
   'domain_regopt_insensitive', 'popup_regopt_insensitive',
@@ -14,7 +15,7 @@ var locale_i18n = [
   'regex_information'
 ];
 
-function LoadValues(document, default_values)
+function LoadValues(document, values, debugCallback)
 {
   if (getType(document) != 'object') {
     throw 'First argument is not object.';
@@ -24,62 +25,70 @@ function LoadValues(document, default_values)
   }
 
   // Get All Option Value.
-  var debugList = []; // use Debug
-  for (var key in default_values) {
-    var value = localStorage[key];
-    if (getType(value) != 'string') {
-      continue;
-    }
+  chrome.storage.local.get(null, function(items) {
+    var debugList = []; // use Debug
 
-    var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
-    if (elName) {
-      switch (elName[2]) {
-        case 'radio':
-          var element = document.evaluate(
-              '//input[@name="' + elName[1] + '"][@value="' + value + '"]',
-              document, null, 7, null);
-          if (element.snapshotLength != 1) {
-            throw 'LoadValues() Get ' + elName[2] + ' error.';
-          }
-          element.snapshotItem(0).checked = true;
-          debugList.push(elName[1]);
-          break;
-        case 'checkbox':
-          var element = document.evaluate(
-              '//input[@name="' + elName[1] + '"]', document, null, 7, null);
-          if (element.snapshotLength != 1) {
-            throw 'LoadValues() Get ' + elName[2] + ' error.';
-          }
-          element.snapshotItem(0).checked = (value == 'true') ? true : false;
-          debugList.push(elName[1]);
-          break;
-        case 'text':
-          var element = document.evaluate(
-              '//input[@name="' + elName[1] + '"]', document, null, 7, null);
-          if (element.snapshotLength != 1) {
-            throw 'LoadValues() Get ' + elName[2] + ' error.';
-          }
-          element.snapshotItem(0).value = Trim(value);
-          debugList.push(elName[1]);
-          break;
-        case 'textarea':
-          var element = document.evaluate(
-              '//textarea[@name="' + elName[1] + '"]', document, null, 7, null);
-          if (element.snapshotLength != 1) {
-            throw 'LoadValues() Get ' + elName[2] + ' error.';
-          }
-          element.snapshotItem(0).value = Trim(value);
-          debugList.push(elName[1]);
-          break;
+    items = getType(values) == 'object' ? values : items;
+    for (var key in items) {
+      var value = items[key];
+
+      var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
+      if (elName) {
+        switch (elName[2]) {
+          case 'radio':
+            var element = document.evaluate(
+                '//input[@name="' + elName[1] + '"][@value="' + value + '"]',
+                document, null, 7, null);
+            if (element.snapshotLength != 1) {
+              throw 'LoadValues() Get ' + elName[2] + ' error.';
+            }
+            element.snapshotItem(0).checked = true;
+            debugList.push(elName[1]);
+            break;
+          case 'checkbox':
+            var element = document.evaluate(
+                '//input[@name="' + elName[1] + '"]', document, null, 7, null);
+            if (element.snapshotLength != 1) {
+              throw 'LoadValues() Get ' + elName[2] + ' error.';
+            }
+            element.snapshotItem(0).checked = value;
+            debugList.push(elName[1]);
+            break;
+          case 'text':
+            var element = document.evaluate(
+                '//input[@name="' + elName[1] + '"]', document, null, 7, null);
+            if (element.snapshotLength != 1) {
+              throw 'LoadValues() Get ' + elName[2] + ' error.';
+            }
+            element.snapshotItem(0).value = Trim(value);
+            debugList.push(elName[1]);
+            break;
+          case 'textarea':
+            var element = document.evaluate(
+                '//textarea[@name="' + elName[1] + '"]',
+                document, null, 7, null);
+            if (element.snapshotLength != 1) {
+              throw 'LoadValues() Get ' + elName[2] + ' error.';
+            }
+            element.snapshotItem(0).value = Trim(value);
+            debugList.push(elName[1]);
+            break;
+        }
       }
     }
-  }
 
-  return debugList;
+    if (getType(debugCallback) == 'function') {
+      debugCallback(debugList);
+    }
+  });
 }
 
-function SaveValues()
+function SaveValues(values, debugCallback)
 {
+  if (getType(values) != 'object') {
+    throw 'First argument is not object.';
+  }
+
   var debug = [];
 
   // inputタグの保存するtype
@@ -92,24 +101,30 @@ function SaveValues()
     }
   }
 
+  var writeData = new Object();
+
   var inputs = document.evaluate(
       '//input[' + types + ']', document, null, 7, null);
   for (var i = 0; i < inputs.snapshotLength; i++) {
     var storageName = inputs.snapshotItem(i).name +
                       '_' + inputs.snapshotItem(i).type;
+    if (!(storageName in values)) { // Skip if don't include the save values.
+      continue;
+    }
+
     switch (inputs.snapshotItem(i).type) {
       case 'radio':
         if (inputs.snapshotItem(i).checked) {
-          localStorage[storageName] = inputs.snapshotItem(i).value;
+          writeData[storageName] = inputs.snapshotItem(i).value;
           debug.push(inputs.snapshotItem(i).name);
         }
         break;
       case 'checkbox':
-        localStorage[storageName] = inputs.snapshotItem(i).checked;
+        writeData[storageName] = inputs.snapshotItem(i).checked;
         debug.push(inputs.snapshotItem(i).name);
         break;
       case 'text':
-        localStorage[storageName] = Trim(inputs.snapshotItem(i).value);
+        writeData[storageName] = Trim(inputs.snapshotItem(i).value);
         debug.push(inputs.snapshotItem(i).name);
         break;
     }
@@ -119,11 +134,19 @@ function SaveValues()
   for (var i = 0; i < textareas.snapshotLength; i++) {
     var storageName = textareas.snapshotItem(i).name + '_' +
                       textareas.snapshotItem(i).tagName.toLowerCase();
-    localStorage[storageName] = Trim(textareas.snapshotItem(i).value);
+    if (!(storageName in values)) { // Skip if don't include the save values.
+      continue;
+    }
+
+    writeData[storageName] = Trim(textareas.snapshotItem(i).value);
     debug.push(textareas.snapshotItem(i).name);
   }
 
-  return debug;
+  chrome.storage.local.set(writeData, function() {
+    if (getType(debugCallback) == 'function') {
+      debugCallback(debug);
+    }
+  });
 }
 
 function InitValues(document, checkTagList, default_values)
@@ -327,13 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize
   InitTranslation(document);
   InitValues(document, ['input', 'textarea'], default_values);
-  LoadValues(document, default_values); // Config Load
+  LoadValues(document, null); // Config Load
 
   // buttons
   var status = document.getElementById('status');
   var timeoutTime = 1000;
   document.querySelector('#save').addEventListener('click', function(e) {
-    SaveValues();
+    SaveValues(default_values);
 
     status.innerHTML = 'Options Saved.';
     setTimeout(function() {
@@ -356,6 +379,31 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       status.innerHTML = '';
     }, timeoutTime);
+  }, false);
+
+  // Import and Export
+  var config_view = document.getElementById('config_view');
+  var config_view_status = document.getElementById('config_view_status');
+  document.getElementById('export').addEventListener('click', function(e) {
+    chrome.storage.local.get(null, function(items) {
+      config_view.value = JSON.stringify(items);
+    });
+  }, false);
+  document.getElementById('import').addEventListener('click', function(e) {
+    try {
+      var items = JSON.parse(config_view.value);
+      LoadValues(document, items, function() {
+        config_view_status.textContent = 'Success. Please, save';
+        config_view_status.style.color = 'green';
+        setTimeout(function() {
+          config_view_status.innerHTML = '';
+        }, 1000);
+      });
+    } catch (e) {
+      config_view_status.textContent = 'Import error. invalid string.';
+      config_view_status.style.color = 'red';
+      return;
+    }
   }, false);
 
   // 正規表現確認ツールの表示・非表示アニメーション

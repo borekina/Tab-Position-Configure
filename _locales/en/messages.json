@@ -19,6 +19,14 @@
     "message": "Other",
     "description": "head in Options."
   },
+  "export": {
+    "message": "export",
+    "description": "export"
+  },
+  "import": {
+    "message": "import",
+    "description": "import"
+  },
   "default": {
     "message": "Default",
     "description": "default"

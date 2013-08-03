@@ -19,6 +19,14 @@
     "message": "その他",
     "description": "head in Options."
   },
+  "export": {
+    "message": "エクスポート",
+    "description": "export"
+  },
+  "import": {
+    "message": "インポート",
+    "description": "import"
+  },
   "default": {
     "message": "デフォルト",
     "description": "default"
