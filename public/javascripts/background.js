@@ -26,6 +26,7 @@ function onInstall() {
 function onUpdate() {
   console.log('Extension Updated.');
 
+  // ver 1.0.5 later
   // switch localStorage to chrome.storage.local.
   var switchData = new Object();
   for (key in default_values) {
@@ -62,7 +63,6 @@ function getVersion() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // この拡張機能外のスクリプトを使って行う初期化処理
   Init();
 
   // この拡張機能のバージョンチェック

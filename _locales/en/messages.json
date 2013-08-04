@@ -4,7 +4,7 @@
     "description": "Extension Name"
   },
   "extDescription": {
-    "message": "This extension can change action of tab.",
+    "message": "This extension can change the action of the tab.",
     "description": "Extension Work"
   },
   "open_tabTitle": {
