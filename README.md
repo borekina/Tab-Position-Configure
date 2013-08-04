@@ -1,4 +1,4 @@
-# Tab Position Config
+# Tab Position Configure
 Google Chrome用拡張機能。
 
 ### 基本機能
