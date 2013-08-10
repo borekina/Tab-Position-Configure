@@ -253,7 +253,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
   if (tabIds.isEmpty(tab.windowId)) {
     tabIds.add({ windowId: tab.windowId, tabId: tab.id });
   } else {
-    chrome.storage.local(null, function(items) {
+    chrome.storage.local.get(null, function(items) {
       var storageName = 'open_pos_radio';
       var state = items[storageName] ? items[storageName] :
                                        default_values[storageName];
