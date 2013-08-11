@@ -18,10 +18,7 @@ var locale_i18n = [
 function LoadValues(document, values, debugCallback)
 {
   if (getType(document) != 'object') {
-    throw 'First argument is not object.';
-  }
-  if (getType(default_values) != 'object') {
-    throw 'Second argument Error is not object';
+    throw new Error('First argument is not object.');
   }
 
   // Get All Option Value.

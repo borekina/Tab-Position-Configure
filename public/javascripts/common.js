@@ -12,7 +12,7 @@ if (!default_values) {
     'popup_window_is_open_tab_checkbox': false,
     'popup_exclude_url_textarea':
         'chrome[\\w-]*://\n' +
-        '*.feedly.com',
+        '[\\w]*.feedly.com',
     'popup_regopt_insensitive_checkbox': true
   };
 }

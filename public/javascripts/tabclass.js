@@ -27,9 +27,42 @@ TabIdList.prototype.get = function(getOptions) {
   return this.data[windowId][index];
 };
 
+TabIdList.prototype.find = function(findOptions) {
+  var windowId = findOptions.windowId;
+  var id = findOptions.id;
+  if (getType(findOptions) != 'object') {
+    throw new Error('Invalid argument. argument is not object.');
+  }
+  if (getType(windowId) != 'number' &&
+      getType(windowId) != 'undefined') {
+    throw new Error('Invalid argument. windowId key is not ' +
+                    ' number or undefined type in argument object.');
+  }
+
+  var searchObj = new Object();
+  if (getType(windowId) == 'undefined') {
+    searchObj = this.data;
+  } else if (getType(id) == 'number') {
+    searchObj[windowId] = this.data[windowId];
+  } else {
+    throw new Error('Invalid argument. ' +
+                    'id key is not number type in argument object.');
+  }
+
+  for (var key in searchObj) {
+    for (var i = 0; i < this.data[key].length; i++) {
+      if (this.data[key][i] == id) {
+        return { windowId: parseInt(key), index: i };
+      }
+    }
+  }
+
+  throw new Error("Can't find id.");
+};
+
 TabIdList.prototype.add = function(addOptions) {
   var windowId = addOptions.windowId;
-  var tabId = addOptions.tabId;
+  var id = addOptions.id;
   if (getType(addOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
@@ -37,26 +70,26 @@ TabIdList.prototype.add = function(addOptions) {
     throw new Error('Invalid argument. ' +
                     'windowId key is not number type in argument object.');
   }
-  if (getType(tabId) != 'number') {
+  if (getType(id) != 'number') {
     throw new Error('Invalid argument. ' +
-                    'tabId key is not number type in argument object.');
+                    'id key is not number type in argument object.');
   }
 
   if (getType(this.data[windowId]) == 'undefined') {
     this.data[windowId] = new Array();
   }
-  this.data[windowId].push(tabId);
+  this.data[windowId].push(id);
 };
 
 TabIdList.prototype.insert = function(insertOptions) {
   var windowId = insertOptions.windowId;
   var index = insertOptions.index;
-  var tabId = insertOptions.tabId;
+  var id = insertOptions.id;
+
   if (getType(insertOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
-  if (getType(windowId) != 'number' &&
-      getType(windowId) != 'undefined') {
+  if (getType(windowId) != 'number' && getType(windowId) != 'undefined') {
     throw new Error('Invalid argument. ' +
                     'windowId key is not number type in argument object.');
   }
@@ -64,15 +97,15 @@ TabIdList.prototype.insert = function(insertOptions) {
     throw new Error('Invalid argument. ' +
                     'index key is not number type in argument object.');
   }
-  if (getType(tabId) != 'number') {
+  if (getType(id) != 'number') {
     throw new Error('Invalid argument. ' +
-                    'tabId key is not number type in argument object.');
+                    'id key is not number type in argument object.');
   }
 
   if (getType(this.data[windowId]) == 'undefined') {
-    this.add({ windowId: windowId, tabId: tabId });
+    this.add({ windowId: windowId, id: id });
   } else {
-    this.data[windowId].splice(index, 0, tabId);
+    this.data[windowId].splice(index, 0, id);
   }
 };
 
@@ -80,6 +113,7 @@ TabIdList.prototype.move = function(moveOptions) {
   var windowId = moveOptions.windowId;
   var fromIndex = moveOptions.fromIndex;
   var toIndex = moveOptions.toIndex;
+
   if (getType(moveOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
@@ -96,88 +130,55 @@ TabIdList.prototype.move = function(moveOptions) {
                     'toIndex key is not number type in argument object.');
   }
 
-  var removed = this.data[windowId].splice(fromIndex, 1);
-  this.data[windowId].splice(toIndex, 0, removed[0]);
+  var length = this.data[windowId].length;
+  if (0 < fromIndex && fromIndex < length || 0 < toIndex && toIndex < length) {
+    var removed = this.data[windowId].splice(fromIndex, 1);
+    this.data[windowId].splice(toIndex, 0, removed[0]);
 
-  return removed[0];
+    return removed[0];
+  } else {
+    console.log('Out of length. fromIndex, toIndex, length',
+                fromIndex, toIndex, length);
+    throw new Error('Out of length.');
+  }
 };
 
 TabIdList.prototype.remove = function(removeOptions) {
   var windowId = removeOptions.windowId;
-  var tabId = removeOptions.tabId;
+  var id = removeOptions.id;
   if (getType(removeOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
 
-  if (getType(tabId) == 'undefined') {
+  if (id == undefined) {
     if (getType(windowId) != 'number') {
-      throw new Error('Invalid argument. ' +
-                      'windowId key is not number type in argument object.');
+      throw new Error('Invalid the value of the key in arguments.');
     }
 
-    // windowIdのタブ情報全体を削除
     delete this.data[windowId];
   } else {
-    var searchObj = new Object();
-    if (getType(windowId) == 'undefined') {
-      searchObj = this.data;
-    } else if (getType(tabId) == 'number') {
-      searchObj[windowId] = this.data[windowId];
-    } else {
-      throw new Error('Invalid argument. ' +
-                      'tabId key is not number type in argument object.');
-    }
+    for (var windowId in this.data) {
+      if (getType(removeOptions.windowId) == 'number' &&
+          removeOptions.windowId != parseInt(windowId)) {
+        continue;
+      }
 
-    // windowId内のIDを削除
-    for (var key in searchObj) {
-      for (var i = 0; i < this.data[key].length; i++) {
-        if (this.data[key][i] == tabId) {
-          return this.data[key].splice(i, 1);
+      for (var i = 0; i < this.data[windowId].length; i++) {
+        if (this.data[windowId][i] == id) {
+          this.data[windowId].splice(i, 1);
         }
       }
     }
   }
 };
 
-TabIdList.prototype.find = function(findOptions) {
-  var windowId = findOptions.windowId;
-  var tabId = findOptions.tabId;
-  if (getType(findOptions) != 'object') {
-    throw new Error('Invalid argument. argument is not object.');
-  }
-  if (getType(windowId) != 'number' &&
-      getType(windowId) != 'undefined') {
-    throw new Error('Invalid argument. windowId key is not ' +
-                    ' number or undefined type in argument object.');
-  }
-
-  var searchObj = new Object();
+TabIdList.prototype.Length = function(windowId) {
   if (getType(windowId) == 'undefined') {
-    searchObj = this.data;
-  } else if (getType(tabId) == 'number') {
-    searchObj[windowId] = this.data[windowId];
-  } else {
-    throw new Error('Invalid argument. ' +
-                    'tabId key is not number type in argument object.');
-  }
-
-  for (var key in searchObj) {
-    for (var i = 0; i < this.data[key].length; i++) {
-      if (this.data[key][i] == tabId) {
-        return { windowId: parseInt(key), index: i };
-      }
+    var length = 0;
+    for (var i in this.data) {
+      length++;
     }
-  }
-
-  throw new Error("Can't find tabId.");
-};
-
-TabIdList.prototype.length = function(windowId) {
-  if (getType(windowId) == 'undefined') {
-    var i = 0;
-    for (; this.data[i] != undefined; i++) {
-    }
-    return i;
+    return length;
   } else if (getType(windowId) == 'number') {
     return this.data[windowId].length;
   } else {
@@ -190,7 +191,8 @@ TabIdList.prototype.isEmpty = function(windowId) {
     throw new Error('Invalid argument. not number.');
   }
 
-  return getType(this.data[windowId]) == 'undefined';
+  return getType(this.data[windowId]) == 'undefined' ||
+         this.data[windowId].length == 0;
 };
 
 /* TabIdHistory class */
@@ -204,14 +206,11 @@ TabIdHistory.prototype.get = function(getOptions) {
   if (getType(getOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
-  if (getType(windowId) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'windowId key is not number type in argument object.');
+  if (getType(windowId) != 'number' ||
+      getType(index) != 'number') {
+    throw new Error('Invalid type of the value of the key in the getOptions.');
   }
-  if (getType(index) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'index key is not number type in argument object.');
-  }
+
   if (getType(this.history[windowId]) == 'undefined' ||
       this.history[windowId].length <= 0) {
     throw new Error('History is not found windowId object.');
@@ -243,42 +242,34 @@ TabIdHistory.prototype.lastPrevious = function(windowId, gap) {
 
 TabIdHistory.prototype.update = function(updateOptions) {
   var windowId = updateOptions.windowId;
-  var tabId = updateOptions.tabId;
+  var id = updateOptions.id;
   if (getType(updateOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
-  if (getType(windowId) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'windowId key is not number type in argument object.');
-  }
-  if (getType(tabId) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'tabId key is not number type in argument object.');
+  if (getType(windowId) != 'number' || getType(id) != 'number') {
+    throw new Error(
+        'Invalid type of the value of the key in the updateOptions.');
   }
 
-  if (this.isEmpty(windowId)) {
+  if (this.history[windowId] == undefined) {
     this.history[windowId] = new Array();
   }
 
   var length = this.history[windowId].length;
-  if (length == 0 ||
-      this.get({ windowId: windowId, index: length - 1 }) != tabId) {
-    this.remove({ windowId: windowId, tabId: tabId });
-    this.history[windowId].push(tabId);
-    return this.history[windowId].length - 1;
-  } else {
-    return null;
+  if (length == 0 || this.history[windowId][length - 1] != id) {
+    this.remove({ windowId: windowId, id: id });
+    this.history[windowId].push(id);
   }
 };
 
 TabIdHistory.prototype.remove = function(removeOptions) {
   var windowId = removeOptions.windowId;
-  var tabId = removeOptions.tabId;
+  var id = removeOptions.id;
   if (getType(removeOptions) != 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
 
-  if (getType(tabId) == 'undefined') {
+  if (getType(id) == 'undefined') {
     if (getType(windowId) != 'number') {
       throw new Error('Invalid argument. ' +
                       'windowId key is not number type in argument object.');
@@ -287,29 +278,35 @@ TabIdHistory.prototype.remove = function(removeOptions) {
     // windowIdの履歴全体を削除
     delete this.history[windowId];
   } else {
-    var searchObj = new Object();
-    if (getType(windowId) == 'undefined') {
-      searchObj = this.history;
-    } else if (getType(tabId) == 'number') {
-      searchObj[windowId] = this.history[windowId];
-    } else {
-      throw new Error('Invalid argument. ' +
-                      'tabId key is not number type in argument object.');
-    }
+    for (var winId in this.history) {
+      winId = parseInt(winId);
+      if (getType(windowId) == 'number' && windowId != winId) {
+        continue;
+      }
 
-    // windowId内の履歴を削除
-    var count = 0;
-    for (var key in searchObj) {
-      for (var i = 0; i < this.history[key].length; i++) {
-        if (this.history[key][i] == tabId) {
-          this.history[key].splice(i, 1);
+      for (var i = 0; i < this.history[winId].length; i++) {
+        if (this.history[winId][i] == id) {
+          this.history[winId].splice(i, 1);
           i--;
-          count++;
         }
       }
     }
+  }
+};
 
-    return count;
+TabIdHistory.prototype.length = function(windowId) {
+  if (windowId == undefined) {
+    var length = 0;
+    for (var i in this.history) {
+      length++;
+    }
+    return length;
+  } else {
+    if (getType(this.history[windowId]) == 'array') {
+      return this.history[windowId].length;
+    } else {
+      return 0;
+    }
   }
 };
 

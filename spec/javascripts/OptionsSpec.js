@@ -14,7 +14,7 @@ describe('Options Function', function() {
                   'google.(co.jp|com)',
             },
             get: function(getValues, callback) {
-              if (getType(getValues) != 'object') {
+              if (getValues != null && getType(getValues) != 'object') {
                 throw new Error('chrome.storage.local.get mock error.');
               }
               if (getType(callback) != 'function') {
@@ -22,12 +22,15 @@ describe('Options Function', function() {
                                 ' callback is not function.');
               }
 
-              var returnData = new Object();
-              for (var key in getValues) {
-                returnData[key] = this.data[key];
+              if (getValues != null) {
+                var returnData = new Object();
+                for (var key in getValues) {
+                  returnData[key] = this.data[key];
+                }
+                callback(returnData);
+              } else {
+                callback(this.data);
               }
-
-              callback(returnData);
             },
             set: function(setObject, callback) {
               for (var key in setObject) {
@@ -46,7 +49,6 @@ describe('Options Function', function() {
 
         expect(function() { LoadValues(document, {}); }).not.toThrow();
         expect(function() { LoadValues(function() {}); }).toThrow();
-        expect(function() { LoadValues(document, 1); }).toThrow();
 
         var values = {
             'open_pos_radio': 'default',
