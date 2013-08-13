@@ -84,6 +84,7 @@ if (!ArrayEqual) {
 }
 
 if (!Sleep) {
+  // ブラウザの応答性は下がる(ビジーウェイト)
   function Sleep(T) {
     var d1 = new Date().getTime();
     var d2 = new Date().getTime();

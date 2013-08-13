@@ -1,6 +1,14 @@
 var lastFocusWindowId = undefined;
+/*
+ * The list of the tab id for the tab retrieval.
+ *
+ * If the information in the tab can be acquired without this,
+ * don't use this as much as possible.
+ */
 var tabIds = new TabIdList();
-var tabIdHistory = new TabIdList();
+/* For Storing the tab id of the last. */
+var tabIdHistory = new TabIdHistory();
+/* Used last tab only. */
 var focusTabHistory = new TabIdHistory();
 
 var Lock = function() {
@@ -21,13 +29,16 @@ Lock.prototype.IsLocked = function() {
   return this.__lock__ > 0;
 };
 
-// This has become true after using ClosedFocusTab.
-// It is closed, you should set false.
+// This done lock after using ClosedFocusTab.
 var afterClosedFocusTab = new Lock();
+// Lock after opening the tab in popup window.
+var afterOpeningTabInPopup = new Lock();
 
 /* functions */
 function MoveTab(TabIdHistory, moveOptions, callback)
 {
+  console.log(arguments.callee.name);
+
   var windowId = moveOptions.windowId;
   var tabId = moveOptions.tabId;
   var state = moveOptions.state;
@@ -47,35 +58,23 @@ function MoveTab(TabIdHistory, moveOptions, callback)
     throw new Error('Third argument is not callback functions.');
   }
 
-  // use both first and last process.
-  var index_of_tip = undefined;
-
-  // use both left and right process.
-  var length = TabIdHistory.Length(windowId);
-  var index = length - 1 > 0 ? length - 1 : 0;
-  var lastPrevious = TabIdHistory.get({ windowId: windowId, index: index });
-  console.log(tabIds.data[windowId]);
-  console.log(lastPrevious,
-      TabIdHistory.get({ windowId: windowId, index: index - 1 }));
-  // Adjust gap whether open in open normally or open background.
-  var gap = (lastPrevious == tabId) ? -1 : 0;
-  // Adjust gap whether select in the left or the right.
-  var stateGap = undefined;
-
   switch (state) {
     case 'first':
-      index_of_tip = (index_of_tip != undefined) ? index_of_tip : 0;
     case 'last':
-      index_of_tip = (index_of_tip != undefined) ? index_of_tip : 65535;
-      if (getType(callback) == 'function') {
-        callback(index_of_tip);
-      }
+      chrome.tabs.query({ windowId: windowId }, function(results) {
+        var index = (state == 'first') ? 0 : results[results.length - 1].index;
+        if (getType(callback) == 'function') {
+          callback(index);
+        }
+      });
       break;
     case 'left':
-      stateGap = (stateGap != undefined) ? stateGap : 0;
     case 'right':
-      stateGap = (stateGap != undefined) ? stateGap : 1;
+      var stateGap = (state == 'left') ? 0 : 1;
 
+      var lastPrevious = TabIdHistory.lastPrevious(windowId);
+      // Adjust gap whether open in open normally or open background.
+      var gap = (lastPrevious == tabId) ? -1 : 0;
       chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
         if (result.length == 1) {
           if (getType(callback) == 'function') {
@@ -100,6 +99,8 @@ function MoveTab(TabIdHistory, moveOptions, callback)
 function ClosedTabFocus(
     TabIdList, TabIdHistory, focusTabHistory, focusOptions, callback)
 {
+  console.log(arguments.callee.name);
+
   var windowId = focusOptions.windowId;
   var tabId = focusOptions.tabId;
   var state = focusOptions.state;
@@ -122,38 +123,22 @@ function ClosedTabFocus(
     throw new Error("callback isn't function.");
   }
 
-  // use both the left andthe right process.
-  var length = TabIdHistory.Length(windowId);
-  var index = length - 1 > 0 ? length - 1 : 0;
-  var lastPrevious = TabIdHistory.get({ windowId: windowId, index: index });
-  var targetIndex =
-      TabIdList.find({ windowId: windowId, id: lastPrevious }).index;
-  // Adjust gap whether select in the left or the right.
-  var stateGap = undefined;
-
   switch (state) {
     case 'first':
-      chrome.tabs.query({ windowId: windowId, index: 0 }, function(result) {
-        if (result.length == 1) {
-          callback(result[0]);
-        } else {
-          throw new Error("The length of the result isn't one. length: " +
-                          result.length);
-        }
-      });
-      break;
     case 'last':
       chrome.tabs.query({ windowId: windowId }, function(result) {
-        callback(result[result.length - 1]);
+        var index = (state == 'first') ? 0 : result.length - 1;
+        callback(result[index]);
       });
       break;
     case 'left':
-      stateGap = (stateGap != undefined) ? stateGap : -1;
     case 'right':
-      stateGap = (stateGap != undefined) ? stateGap : 0;
+      var stateGap = (state == 'left') ? -1 : 0;
 
+      var lastPrevious = TabIdHistory.lastPrevious(windowId);
+      var findTab = TabIdList.find({ windowId: windowId, id: lastPrevious });
       chrome.tabs.query(
-          { windowId: windowId, index: targetIndex + stateGap },
+          { windowId: windowId, index: findTab.index + stateGap },
           function(result) {
             if (result.length == 1) {
               callback(result[0]);
@@ -180,89 +165,123 @@ function ClosedTabFocus(
 
 function WhileUrlOpen(tabs, whileOptions, callback)
 {
-  if (getType(tabs) != 'array') {
-    throw new Error('Invalid argument. first argument is not array.');
-  }
-  if (getType(whileOptions) != 'object') {
-    throw new Error('Invalid argument. Second argument is not object.');
-  }
-  if (getType(whileOptions.windowId) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'windowId key is not number in Second argument.');
-  }
-  if (getType(whileOptions.startIndex) == 'undefined') {
-    whileOptions.startIndex = 0;
-  } else if (getType(whileOptions.startIndex) != 'number') {
-    throw new Error('Invalid argument. ' +
-                    'startIndex key is not number or undefined ' +
-                    'in Second argument.');
-  }
-  if (getType(whileOptions.exclude) != 'array') {
-    throw new Error('Invalid argument. ' +
-                    'exclude key is not array of string in Second argument.');
-  }
-  if (getType(whileOptions.excludeOption) != 'string') {
-    throw new Error('Invalid argument. ' +
-                    'excludeOption key is not string in Second argument.');
-  }
-  if (getType(callback) != 'function') {
-    throw new Error('Invalid argument. ' +
-                    'Third argument is not callback functions.');
+  console.log(arguments.callee.name);
+
+  if (getType(tabs) != 'array' ||
+      getType(whileOptions) != 'object' ||
+      getType(callback) != 'function') {
+    throw new Error(
+        'Invalid a type of arguments. you check a type of arguments.');
   }
 
-  if (whileOptions.startIndex >= tabs.length) {
-    callback(true);
-    return;
+  var windowId = whileOptions.windowId;
+  var exclude = whileOptions.exclude;
+  var excludeOption = whileOptions.excludeOption;
+  if (getType(windowId) != 'number' ||
+      getType(exclude) != 'array' ||
+      getType(excludeOption) != 'string') {
+    throw new Error('Invalid type of the value of keys in the whileOptions.');
+  }
+  if (getType(whileOptions.begin) == 'undefined') {
+    whileOptions.begin = 0;
+  } else if (getType(whileOptions.begin) != 'number') {
+    throw new Error('Invalid type of the whileOptions.begin.');
+  }
+  if (getType(whileOptions.end) == 'undefined') {
+    whileOptions.end = tabs.length;
+  } else if (getType(whileOptions.begin) != 'number') {
+    throw new Error('Invalid type of the whileOptions.begin.');
   }
 
-  chrome.tabs.get(tabs[whileOptions.startIndex].id, function(tab) {
-    if (tab.url.length == 0) {
-      Sleep(1);
-      WhileUrlOpen(tabs, whileOptions, callback);
-    } else {
-      for (var i = 0; i < whileOptions.exclude.length; i++) {
-        var exclude = Trim(whileOptions.exclude[i]);
-        if (exclude == '') {
+  // end process.
+  var timerId = setInterval(function() {
+    if (whileOptions.begin >= whileOptions.end) {
+      clearInterval(timerId);
+      callback(true);
+      return;
+    }
+
+    chrome.tabs.get(tabs[whileOptions.begin].id, function(tab) {
+      if (tab.status == 'loading' && tab.url.length == 0) {
+        return;
+      }
+
+      whileOptions.begin++;
+
+      // check regex.
+      for (var i = 0; i < exclude.length; i++) {
+        var ex = Trim(exclude[i]);
+        if (ex == '') {
           continue;
         }
 
-        var re = new RegExp(exclude, whileOptions.excludeOption);
+        var re = new RegExp(ex, excludeOption);
         if (re.test(tab.url)) {
           callback(false);
           return;
         }
       }
 
+      afterOpeningTabInPopup.Lock();
       chrome.tabs.create(
-          { windowId: whileOptions.windowId, url: tab.url },
+          { windowId: windowId, url: tab.url, active: false },
           function(createdTab) {
-            whileOptions.startIndex++;
-            WhileUrlOpen(tabs, whileOptions, callback);
+            // run in chrome.tabs.onCreated.
+            /* afterOpeningTabInPopup.UnLock(); */
           }
       );
-      return;
-    }
-  });
+    });
+  }, 100);
 }
 
 chrome.tabs.onCreated.addListener(function(tab) {
   console.log('onCreated');
+
+  var windowId = tab.windowId;
+  var id = tab.id;
+  var index = tab.index;
+  var openerTabId = tab.openerTabId;
+  if (openerTabId == undefined && !afterOpeningTabInPopup.IsLocked()) {
+    console.log('onCreated skip.');
+    return;
+  }
+
   chrome.storage.local.get(null, function(items) {
-    tabIds.insert({ windowId: tab.windowId, index: tab.index, id: tab.id });
+    tabIds.insert({ windowId: windowId, index: index, id: id });
 
     var storageName = 'open_pos_radio';
     var state = items[storageName] ? items[storageName] :
                                      default_values[storageName];
     MoveTab(
         tabIdHistory,
-        { windowId: tab.windowId, tabId: tab.id, state: state },
+        { windowId: windowId, tabId: id, state: state },
         function(toIndex) {
-          chrome.tabs.move(
-              tab.id,
-              { windowId: tab.windowId, index: toIndex },
-              function(moveTab) {
-              }
-          );
+          if (toIndex != null) {
+            // expect default.
+            chrome.tabs.move(
+                id, { windowId: windowId, index: toIndex }, function(moveTab) {
+                  // Activating the tab of the popup window.
+                  if (afterOpeningTabInPopup.IsLocked()) {
+                    chrome.tabs.update(id, { active: true },
+                        function(updatedTab) {
+                          // release the lock here.
+                          afterOpeningTabInPopup.UnLock();
+                        }
+                    );
+                  }
+                }
+            );
+          } else {
+            // Activating the tab of the popup window.
+            if (afterOpeningTabInPopup.IsLocked()) {
+              chrome.tabs.update(id, { active: true },
+                  function(updatedTab) {
+                    // release the lock here.
+                    afterOpeningTabInPopup.UnLock();
+                  }
+              );
+            }
+          }
         }
     );
   });
@@ -280,6 +299,7 @@ chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
 
 chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   console.log('onRemoved');
+
   if (removeInfo.isWindowClosing) {
     return;
   }
@@ -289,22 +309,16 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 
   focusTabHistory.remove({ windowId: windowId, id: tabId });
 
-  if (tabIdHistory.isEmpty(windowId)) {
-    console.log('onRemoved Process skip(isEmpty).');
+  try {
+    var lastPrevious = tabIdHistory.lastPrevious(windowId);
+    if (lastPrevious != tabId) {
+    }
+  } catch (e) {
+    if (e.message != 'History is not found windowId object.') {
+      console.log(e.message);
+    }
 
-    tabIds.remove({ windowId: windowId, id: tabId });
-    tabIdHistory.remove({ windowId: windowId, id: tabId });
-    afterClosedFocusTab.UnLock();
-    return;
-  }
-
-  var length = tabIdHistory.Length(windowId);
-  var index = length - 1 > 0 ? length - 1 : 0;
-  var lastPrevious = tabIdHistory.get({ windowId: windowId, index: index });
-  console.log(lastPrevious, tabId);
-  if (lastPrevious != tabId) {
     console.log('onRemoved Process skip.');
-
     tabIds.remove({ windowId: windowId, id: tabId });
     tabIdHistory.remove({ windowId: windowId, id: tabId });
     afterClosedFocusTab.UnLock();
@@ -327,7 +341,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
             chrome.tabs.query(
                 { windowId: windowId, active: true }, function(result) {
                   if (result.length == 1) {
-                    tabIdHistory.add(
+                    tabIdHistory.update(
                         { windowId: result[0].windowId, id: result[0].id });
                     afterClosedFocusTab.UnLock();
                   } else {
@@ -336,45 +350,43 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
                   }
                 }
             );
+            return;
           } else {
-            // your settings process.
+            // your setting process.
             chrome.tabs.update(result.id, { active: true }, function(tab) {
               tabIds.remove({ windowId: windowId, id: tabId });
               tabIdHistory.remove({ windowId: windowId, id: tabId });
-              tabIdHistory.add({ windowId: windowId, id: tab.id });
+
+              tabIdHistory.update({ windowId: windowId, id: tab.id });
               afterClosedFocusTab.UnLock();
             });
+            return;
           }
         });
   });
 });
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
+  console.log('onActivated');
+
   var windowId = activeInfo.windowId;
   var tabId = activeInfo.tabId;
-
-  console.log('onActivated');
-  console.log('onActivated activeTab', tabId);
-
   if (afterClosedFocusTab.IsLocked()) {
     console.log('chrome.tabs.onActivated is skipped.');
     return;
   }
 
-  tabIdHistory.remove({ windowId: windowId, id: tabId });
-  tabIdHistory.add({ windowId: windowId, id: tabId });
-
+  tabIdHistory.update({ windowId: windowId, id: tabId });
   focusTabHistory.update({ windowId: windowId, id: tabId });
 });
 
 chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
   console.log('onAttached');
+
   var newWindowId = attachInfo.newWindowId;
   var newPosition = attachInfo.newPosition;
   chrome.tabs.get(tabId, function(tab) {
-    tabIdHistory.remove({ windowId: newWindowId, id: tab.id });
-    tabIdHistory.add({ windowId: newWindowId, id: tab.id });
-
+    tabIdHistory.update({ windowId: newWindowId, id: tab.id });
     focusTabHistory.update({ windowId: newWindowId, id: tab.id });
 
     tabIds.insert({ windowId: newWindowId, index: newPosition, id: tabId });
@@ -383,6 +395,7 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
 
 chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
   console.log('onDetached');
+
   chrome.storage.local.get(null, function(items) {
     var storageName = 'open_focus_radio';
     var state = items[storageName] ? items[storageName] :
@@ -401,6 +414,8 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
                   focusTabHistory,
                   { windowId: oldWindowId, tabId: result[0].id, state: state },
                   function(t) {
+                    tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
+                    tabIds.remove({ windowId: windowId, id: tabId });
                   }
               );
             } else {
@@ -410,10 +425,9 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
           }
       );
     } catch (e) {
-      console.log(e.message);
-    } finally {
       tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
       tabIds.remove({ windowId: windowId, id: tabId });
+      throw e;
     }
   });
 });
@@ -443,7 +457,6 @@ chrome.windows.onCreated.addListener(function(window) {
         excludeOption = excludeOption == true ? 'i' : '';
         WhileUrlOpen(window.tabs,
                      { windowId: lastFocusWindowId,
-                       startIndex: 0,
                        exclude: exclude.split('\n'),
                        excludeOption: excludeOption },
                      function(closed) {
@@ -471,7 +484,7 @@ chrome.windows.getAll({ populate: true }, function(windows) {
     for (var j = 0; j < windows[i].tabs.length; j++) {
       var tabId = windows[i].tabs[j].id;
       tabIds.add({ windowId: windowId, id: tabId });
-      tabIdHistory.add({ windowId: windowId, id: tabId });
+      tabIdHistory.update({ windowId: windowId, id: tabId });
     }
 
     chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
@@ -479,8 +492,7 @@ chrome.windows.getAll({ populate: true }, function(windows) {
         var windowId = result[0].windowId;
         var tabId = result[0].id;
 
-        tabIdHistory.remove({ windowId: windowId, id: tabId });
-        tabIdHistory.add({ windowId: windowId, id: tabId });
+        tabIdHistory.update({ windowId: windowId, id: tabId });
 
         focusTabHistory.update({ windowId: windowId, id: tabId });
       } else {
