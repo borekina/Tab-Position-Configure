@@ -1,10 +1,14 @@
 ﻿{
     "name": "__MSG_extName__",
     "description": "__MSG_extDescription__",
-    "version": "1.0.8",
+    "version": "1.0.8.1",
     "manifest_version": 2,
     "default_locale": "en",
     "options_page": "options.html",
+    "icons": {
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
     "background" : {
       "scripts": [
         "public/javascripts/common.js",
