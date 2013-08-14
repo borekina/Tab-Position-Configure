@@ -85,30 +85,4 @@ describe('Options Function', function() {
           expect(debug.length).toEqual(4);
         });
     });
-
-    it('Initalize Settings', function() {
-        loadFixtures('../../options.html');
-
-        expect(function() { InitValues({}, [], {}); }).not.toThrow();
-        expect(function() { InitValues([], [], {}); }).toThrow();
-        expect(function() { InitValues({}, {}, {}); }).toThrow();
-        expect(function() { InitValues({}, [], []); }).toThrow();
-
-        var default_values = {
-            'open_pos_radio': 'default',
-            'close_focus_radio': 'default',
-            'other_domain_open_checkbox': false,
-            'exclude_url_textarea': '',
-            'popup_window_is_open_tab_checkbox': false
-        };
-        var change_options = InitValues(
-            document, ['input', 'textarea'], default_values);
-
-        expect(change_options['open_pos_radio']).toEqual('default');
-        expect(change_options['close_focus_radio']).toEqual('default');
-        expect(change_options['other_domain_open_checkbox']).toBeFalsy();
-        expect(change_options['exclude_url_textarea']).toEqual('');
-        expect(change_options[
-               'popup_window_is_open_tab_checkbox']).toBeFalsy(false);
-    });
 });
