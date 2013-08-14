@@ -17,27 +17,28 @@ if (!default_values) {
   };
 }
 
-if (!getType) {
-  function getType(obj)
-  {
-    if (obj instanceof Boolean || typeof obj == 'boolean') return 'boolean';
-    if (obj instanceof Number || typeof obj == 'number') return 'number';
-    if (obj instanceof String || typeof obj == 'string') return 'string';
-    if (obj instanceof Array) return 'array';
-    if (obj instanceof Function) return 'function';
-    if (obj === null) return 'null';
-    if (obj === undefined) return 'undefined';
-    if (obj instanceof Object) return 'object';
 
-    throw 'Unknown type';
-  }
+if (!toType || !getType) {
+  /* base program.
+   * http://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
+   */
+  var toType = function(obj) {
+    var type = ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+    if (type === 'global') {
+      if (obj === void 0) { return 'undefined' }
+      if (obj === null) { return 'null' }
+    }
+    return type;
+  };
+
+  var getType = function(obj) { return toType(obj) };
 }
 
 if (!Trim) {
   function Trim(string)
   {
-    if (getType(string) != 'string') {
-      throw 'Argument error. used not string object.';
+    if (toType(string) !== 'string') {
+      throw new Error('Argument error. used not string object.');
     }
     return string.replace(/(^\s+)|(\s+$)/g, '');
   }
@@ -46,8 +47,8 @@ if (!Trim) {
 if (!Unique) {
   function Unique(array)
   {
-    if (getType(array) != 'array') {
-      throw 'Argument error. used not array object.';
+    if (toType(array) !== 'array') {
+      throw new Error('Argument error. used not array object.');
     }
 
     var tempdict = {};
@@ -67,7 +68,7 @@ if (!Unique) {
 if (!ArrayEqual) {
   function ArrayEqual(x1, x2)
   {
-    if (x1.length != x2.length) {
+    if (x1.length !== x2.length) {
       return false;
     }
 
