@@ -123,13 +123,13 @@ describe('TabIdHistory class', function() {
     });
 
     it('call update and length', function() {
-      expect(instance.length(windowId)).toEqual(0);
+      expect(instance.Length(windowId)).toEqual(0);
       instance.update({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(1);
+      expect(instance.Length(windowId)).toEqual(1);
       instance.update({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
       instance.update({ windowId: windowId, id: 2 });
-      expect(instance.length(windowId)).toEqual(3);
+      expect(instance.Length(windowId)).toEqual(3);
 
       expect(function() {
         instance.update({ windowId: windowId, id: 2 });
@@ -140,50 +140,50 @@ describe('TabIdHistory class', function() {
     });
 
     it('call remove', function() {
-      expect(instance.length(windowId)).toEqual(0);
+      expect(instance.Length(windowId)).toEqual(0);
       instance.update({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(1);
+      expect(instance.Length(windowId)).toEqual(1);
       instance.update({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
       instance.update({ windowId: windowId, id: 2 });
-      expect(instance.length(windowId)).toEqual(3);
+      expect(instance.Length(windowId)).toEqual(3);
 
       // remove
       instance.remove({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
       expect(instance.history[windowId][0]).toEqual(1);
 
       instance.remove({ windowId: windowId, id: 2 });
-      expect(instance.length(windowId)).toEqual(1);
+      expect(instance.Length(windowId)).toEqual(1);
       expect(instance.history[windowId][0]).toEqual(1);
       
       instance.remove({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(0);
+      expect(instance.Length(windowId)).toEqual(0);
     });
 
     it('call remove windowId', function() {
       // remove windowId
-      expect(instance.length()).toEqual(0);
+      expect(instance.Length()).toEqual(0);
 
-      expect(instance.length(windowId)).toEqual(0);
+      expect(instance.Length(windowId)).toEqual(0);
       instance.update({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(1);
+      expect(instance.Length(windowId)).toEqual(1);
       instance.update({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
 
-      expect(instance.length()).toEqual(1);
+      expect(instance.Length()).toEqual(1);
 
       var differId = 555;
-      expect(instance.length(differId)).toEqual(0);
+      expect(instance.Length(differId)).toEqual(0);
       instance.update({ windowId: differId, id: 3 });
-      expect(instance.length(differId)).toEqual(1);
+      expect(instance.Length(differId)).toEqual(1);
       instance.update({ windowId: differId, id: 4 });
-      expect(instance.length(differId)).toEqual(2);
+      expect(instance.Length(differId)).toEqual(2);
 
-      expect(instance.length()).toEqual(2);
+      expect(instance.Length()).toEqual(2);
 
       instance.remove({ windowId: windowId });
-      expect(instance.length()).toEqual(1);
+      expect(instance.Length()).toEqual(1);
       expect(function() {
         instance.get({ windowId: windowId, index: 0 });
       }).toThrow();
@@ -191,14 +191,43 @@ describe('TabIdHistory class', function() {
       expect(instance.get({ windowId: differId, index: 0 })).toEqual(3);
     });
 
-    it('call get', function() {
-      expect(instance.length(windowId)).toEqual(0);
+    it('call isEmpty', function() {
+      expect(instance.isEmpty(windowId)).toEqual(true);
+
+      expect(instance.Length(windowId)).toEqual(0);
       instance.update({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(1);
+
+      expect(instance.isEmpty(windowId)).toEqual(false);
+
+      expect(instance.Length(windowId)).toEqual(1);
       instance.update({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
       instance.update({ windowId: windowId, id: 2 });
-      expect(instance.length(windowId)).toEqual(3);
+      expect(instance.Length(windowId)).toEqual(3);
+
+      // remove
+      instance.remove({ windowId: windowId, id: 0 });
+      expect(instance.Length(windowId)).toEqual(2);
+      expect(instance.history[windowId][0]).toEqual(1);
+
+      instance.remove({ windowId: windowId, id: 2 });
+      expect(instance.Length(windowId)).toEqual(1);
+      expect(instance.history[windowId][0]).toEqual(1);
+      
+      instance.remove({ windowId: windowId, id: 1 });
+      expect(instance.Length(windowId)).toEqual(0);
+
+      expect(instance.isEmpty(windowId)).toEqual(true);
+    });
+
+    it('call get', function() {
+      expect(instance.Length(windowId)).toEqual(0);
+      instance.update({ windowId: windowId, id: 0 });
+      expect(instance.Length(windowId)).toEqual(1);
+      instance.update({ windowId: windowId, id: 1 });
+      expect(instance.Length(windowId)).toEqual(2);
+      instance.update({ windowId: windowId, id: 2 });
+      expect(instance.Length(windowId)).toEqual(3);
 
       expect(instance.get({ windowId: windowId, index: 1 })).toEqual(1);
 
@@ -227,13 +256,13 @@ describe('TabIdHistory class', function() {
     });
 
     it('call lastPrevious', function() {
-      expect(instance.length(windowId)).toEqual(0);
+      expect(instance.Length(windowId)).toEqual(0);
       instance.update({ windowId: windowId, id: 0 });
-      expect(instance.length(windowId)).toEqual(1);
+      expect(instance.Length(windowId)).toEqual(1);
       instance.update({ windowId: windowId, id: 1 });
-      expect(instance.length(windowId)).toEqual(2);
+      expect(instance.Length(windowId)).toEqual(2);
       instance.update({ windowId: windowId, id: 2 });
-      expect(instance.length(windowId)).toEqual(3);
+      expect(instance.Length(windowId)).toEqual(3);
 
       // lastPrevious
       expect(instance.lastPrevious(windowId)).toEqual(2);

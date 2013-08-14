@@ -31,7 +31,7 @@ function onUpdate() {
   var switchData = new Object();
   for (key in default_values) {
     var value = localStorage[key];
-    if (value !== undefined) {
+    if (value !== void 0) {
       var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
       switch (elName[2]) {
         case 'checkbox':
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var prevVersion = items[version] || localStorage[version];
     if (currVersion !== prevVersion) {
       // この拡張機能でインストールしたかどうか
-      if (typeof prevVersion === 'undefined') {
+      if (prevVersion === void 0) {
         onInstall();
       } else {
         onUpdate();

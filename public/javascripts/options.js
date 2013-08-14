@@ -17,8 +17,9 @@ var locale_i18n = [
 
 function LoadValues(document, values, debugCallback)
 {
-  if (document === void 0) {
-    throw new Error('First argument is not object.');
+  if (document === void 0 ||
+      toType(values) !== 'object' && values !== null || values === void 0) {
+    throw new Error('Arguments type error.');
   }
 
   // Get All Option Value.
@@ -28,15 +29,28 @@ function LoadValues(document, values, debugCallback)
     items = values || items;
     for (var key in items) {
       var value = items[key];
-      var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
+      var elName = key.match(
+          /(^[\w]*)_(text|password|radio|checkbox|number|textarea)$/);
       if (elName) {
         switch (elName[2]) {
+          case 'number':
+            var element = document.evaluate(
+                '//input[@name="' + elName[1] + '"]',
+                document, null, 7, null);
+            if (element.snapshotLength !== 1) {
+              console.log('LoadValues() Get ' + elName[1] + ' error.');
+              continue;
+            }
+            element.snapshotItem(0).value = value;
+            debugList.push(elName[1]);
+            break;
           case 'radio':
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"][@value="' + value + '"]',
                 document, null, 7, null);
             if (element.snapshotLength !== 1) {
-              throw 'LoadValues() Get ' + elName[2] + ' error.';
+              console.log('LoadValues() Get ' + elName[1] + ' error.');
+              continue;
             }
             element.snapshotItem(0).checked = true;
             debugList.push(elName[1]);
@@ -45,16 +59,19 @@ function LoadValues(document, values, debugCallback)
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"]', document, null, 7, null);
             if (element.snapshotLength !== 1) {
-              throw 'LoadValues() Get ' + elName[2] + ' error.';
+              console.log('LoadValues() Get ' + elName[1] + ' error.');
+              continue;
             }
             element.snapshotItem(0).checked = value;
             debugList.push(elName[1]);
             break;
+          case 'password':
           case 'text':
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"]', document, null, 7, null);
             if (element.snapshotLength !== 1) {
-              throw 'LoadValues() Get ' + elName[2] + ' error.';
+              console.log('LoadValues() Get ' + elName[1] + ' error.');
+              continue;
             }
             element.snapshotItem(0).value = Trim(value);
             debugList.push(elName[1]);
@@ -64,7 +81,8 @@ function LoadValues(document, values, debugCallback)
                 '//textarea[@name="' + elName[1] + '"]',
                 document, null, 7, null);
             if (element.snapshotLength !== 1) {
-              throw 'LoadValues() Get ' + elName[2] + ' error.';
+              console.log('LoadValues() Get ' + elName[1] + ' error.');
+              continue;
             }
             element.snapshotItem(0).value = Trim(value);
             debugList.push(elName[1]);
@@ -79,16 +97,13 @@ function LoadValues(document, values, debugCallback)
   });
 }
 
-function SaveValues(values, debugCallback)
+function SaveValues(document, saveTypes, callback)
 {
-  if (toType(values) !== 'object') {
-    throw 'First argument is not object.';
+  if (document === void 0 || toType(saveTypes) !== 'array') {
+    throw new Error('Invalid argument.');
   }
 
-  var debug = [];
-
   // inputタグの保存するtype
-  var saveTypes = ['checkbox', 'radio', 'text'];
   var types = '';
   for (var i = 0; i < saveTypes.length; i++) {
     types += '@type="' + saveTypes[i] + '"';
@@ -104,24 +119,20 @@ function SaveValues(values, debugCallback)
   for (var i = 0; i < inputs.snapshotLength; i++) {
     var storageName = inputs.snapshotItem(i).name +
                       '_' + inputs.snapshotItem(i).type;
-    if (!(storageName in values)) { // Skip if don't include the save values.
-      continue;
-    }
-
     switch (inputs.snapshotItem(i).type) {
       case 'radio':
         if (inputs.snapshotItem(i).checked) {
           writeData[storageName] = inputs.snapshotItem(i).value;
-          debug.push(inputs.snapshotItem(i).name);
         }
         break;
       case 'checkbox':
         writeData[storageName] = inputs.snapshotItem(i).checked;
-        debug.push(inputs.snapshotItem(i).name);
         break;
       case 'text':
         writeData[storageName] = Trim(inputs.snapshotItem(i).value);
-        debug.push(inputs.snapshotItem(i).name);
+        break;
+      case 'number':
+        writeData[storageName] = inputs.snapshotItem(i).value;
         break;
     }
   }
@@ -130,31 +141,34 @@ function SaveValues(values, debugCallback)
   for (var i = 0; i < textareas.snapshotLength; i++) {
     var storageName = textareas.snapshotItem(i).name + '_' +
                       textareas.snapshotItem(i).tagName.toLowerCase();
-    if (!(storageName in values)) { // Skip if don't include the save values.
-      continue;
-    }
-
     writeData[storageName] = Trim(textareas.snapshotItem(i).value);
-    debug.push(textareas.snapshotItem(i).name);
   }
 
+  // writeData options.
   chrome.storage.local.set(writeData, function() {
-    if (toType(debugCallback) === 'function') {
-      debugCallback(debug);
+    // writeDatad key catalog
+    var debug = [];
+    for (var key in writeData) {
+      debug.push(key);
+    }
+
+    if (toType(callback) === 'function') {
+      callback(debug);
     }
   });
 }
 
 
-function InitTranslation(document)
+function InitTranslation(document, suffix)
 {
-  if (document === void 0) {
+  if (document === void 0 ||
+      toType(suffix) !== 'string') {
     throw 'InitTranslation Function is Argument Error.';
   }
 
   // テキストの設定
   for (var i = 0; i < locale_i18n.length; i++) {
-    var el = document.getElementsByClassName(locale_i18n[i] + 'Text');
+    var el = document.getElementsByClassName(locale_i18n[i] + suffix);
     var message = chrome.i18n.getMessage(locale_i18n[i]);
     for (var j = 0; j < el.length; j++) {
       var string = el[j].innerHTML;
@@ -297,7 +311,7 @@ function createRegexReference()
 
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize
-  InitTranslation(document);
+  InitTranslation(document, 'Text');
   LoadValues(document, default_values); // Config Init.
   LoadValues(document, null); // Config Load.
 
@@ -305,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var status = document.getElementById('status');
   var timeoutTime = 1000;
   document.querySelector('#save').addEventListener('click', function(e) {
-    SaveValues(default_values);
+    SaveValues(document, ['checkbox', 'radio', 'text']);
 
     status.innerHTML = 'Options Saved.';
     setTimeout(function() {

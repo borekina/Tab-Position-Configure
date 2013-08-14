@@ -72,15 +72,8 @@ describe('Options Function', function() {
     it('Save Settings', function() {
         loadFixtures('../../options.html');
 
-        var values = {
-            'open_pos_radio': 'default',
-            'close_focus_radio': 'default',
-            'other_domain_open_checkbox': false,
-            'exclude_url_textarea':
-    '(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +
-                'localhost\n' +
-                'google.(co.jp|com)',
-        };
+        SaveValues(
+          document, ['checkbox', 'radio', 'text', 'number'], function(debug) {
         SaveValues(values, function(debug) {
           expect(debug.length).toEqual(4);
         });

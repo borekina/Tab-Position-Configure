@@ -292,7 +292,7 @@ TabIdHistory.prototype.remove = function(removeOptions) {
   }
 };
 
-TabIdHistory.prototype.length = function(windowId) {
+TabIdHistory.prototype.Length = function(windowId) {
   if (windowId === void 0) {
     var length = 0;
     for (var i in this.history) {
