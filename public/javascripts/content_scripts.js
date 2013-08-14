@@ -3,10 +3,10 @@
   {
     var host = location.protocol + '//' + location.hostname;
 
-    if (a.target != '') {
+    if (a.target !== '') {
       return;
     }
-    if (a.href.indexOf('javascript:') == 0 || a.href.indexOf(host) == 0) {
+    if (a.href.indexOf('javascript:') === 0 || a.href.indexOf(host) === 0) {
       return;
     }
 
@@ -27,7 +27,7 @@ if (!CheckExclude) {
     }
 
     for (var i = 0; i < ignores.length; i++) {
-      if (Trim(ignores[i]) == '') {
+      if (Trim(ignores[i]) === '') {
         continue;
       }
 
@@ -42,25 +42,21 @@ if (!CheckExclude) {
 
 chrome.storage.local.get(null, function(items) {
   var storageName = 'other_domain_open_checkbox';
-  var state = items[storageName] ?
-              items[storageName] : default_values[storageName];
-  if (state == false) {
+  var state = items[storageName] || default_values[storageName];
+  if (state === false) {
     return;
   }
 
   var storageName = 'exclude_url_textarea';
-  var excludeUrl = items[storageName] ?
-                   items[storageName] : default_values[storageName];
+  var excludeUrl = items[storageName] || default_values[storageName];
 
   var storageName = 'domain_regopt_insensitive_checkbox';
-  var insensitiveOption = items[storageName] ?
-                          items[storageName] : default_values[storageName];
+  var insensitiveOption = items[storageName] || default_values[storageName];
   var result = CheckExclude(
       excludeUrl.split('\n'), insensitiveOption ? 'i' : '', location.href);
   if (!result) {
     var element = document.getElementsByTagName('a');
     for (var i = 0; i < element.length; i++) {
-      console.log('change');
       ChangeNewOpenTabLink(element[i]);
     }
   }

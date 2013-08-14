@@ -35,7 +35,7 @@ function onUpdate() {
       var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
       switch (elName[2]) {
         case 'checkbox':
-          switchData[key] = (value == 'true') ? true : false;
+          switchData[key] = (value === 'true') ? true : false;
           break;
         default:
           switchData[key] = value;
@@ -45,7 +45,7 @@ function onUpdate() {
       localStorage.removeItem(key);
       console.log('switch key: ' + key +
                   ' | data: ' + switchData[key] +
-                  ' | type: ' + getType(switchData[key]));
+                  ' | type: ' + toType(switchData[key]));
     }
   }
   chrome.storage.local.set(switchData, function() {
@@ -69,10 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var version = 'version';
   chrome.storage.local.get(version, function(items) {
     var currVersion = getVersion();
-    var prevVersion = items[version] ? items[version] : localStorage[version];
-    if (currVersion != prevVersion) {
+    var prevVersion = items[version] || localStorage[version];
+    if (currVersion !== prevVersion) {
       // この拡張機能でインストールしたかどうか
-      if (typeof prevVersion == 'undefined') {
+      if (typeof prevVersion === 'undefined') {
         onInstall();
       } else {
         onUpdate();

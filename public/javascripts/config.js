@@ -1,4 +1,4 @@
-var lastFocusWindowId = undefined;
+var lastFocusWindowId = void 0;
 /*
  * The list of the tab id for the tab retrieval.
  *
@@ -42,19 +42,19 @@ function MoveTab(TabIdHistory, moveOptions, callback)
   var windowId = moveOptions.windowId;
   var tabId = moveOptions.tabId;
   var state = moveOptions.state;
-  if (getType(TabIdHistory) != 'object') {
+  if (toType(TabIdHistory) !== 'object') {
     throw new Error('Invalid argument. first argument is not class.');
   }
-  if (getType(moveOptions) != 'object') {
+  if (toType(moveOptions) !== 'object') {
     throw new Error('Invalid argument. second argument is not object.');
   }
-  if (getType(windowId) != 'number' ||
-      getType(tabId) != 'number' ||
-      getType(state) != 'string') {
+  if (toType(windowId) !== 'number' ||
+      toType(tabId) !== 'number' ||
+      toType(state) !== 'string') {
     throw new Error(
         'Invalid a type of the value of the key in the moveOptions.');
   }
-  if (getType(callback) != 'function') {
+  if (toType(callback) !== 'function') {
     throw new Error('Third argument is not callback functions.');
   }
 
@@ -62,22 +62,22 @@ function MoveTab(TabIdHistory, moveOptions, callback)
     case 'first':
     case 'last':
       chrome.tabs.query({ windowId: windowId }, function(results) {
-        var index = (state == 'first') ? 0 : results[results.length - 1].index;
-        if (getType(callback) == 'function') {
+        var index = (state === 'first') ? 0 : results[results.length - 1].index;
+        if (toType(callback) === 'function') {
           callback(index);
         }
       });
       break;
     case 'left':
     case 'right':
-      var stateGap = (state == 'left') ? 0 : 1;
+      var stateGap = (state === 'left') ? 0 : 1;
 
       var lastPrevious = TabIdHistory.lastPrevious(windowId);
       // Adjust gap whether open in open normally or open background.
-      var gap = (lastPrevious == tabId) ? -1 : 0;
+      var gap = (lastPrevious === tabId) ? -1 : 0;
       chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
-        if (result.length == 1) {
-          if (getType(callback) == 'function') {
+        if (result.length === 1) {
+          if (toType(callback) === 'function') {
             callback(result[0].index + stateGap + gap);
           }
         } else {
@@ -86,7 +86,7 @@ function MoveTab(TabIdHistory, moveOptions, callback)
       });
       break;
     case 'default':
-      if (getType(callback) == 'function') {
+      if (toType(callback) === 'function') {
         callback(null);
       }
       break;
@@ -105,21 +105,21 @@ function ClosedTabFocus(
   var tabId = focusOptions.tabId;
   var state = focusOptions.state;
 
-  if (getType(TabIdList) != 'object' ||
-      getType(TabIdHistory) != 'object' ||
-      getType(focusOptions) != 'object') {
+  if (toType(TabIdList) !== 'object' ||
+      toType(TabIdHistory) !== 'object' ||
+      toType(focusOptions) !== 'object') {
     throw new Error('First-Third arguments is not class.');
   }
-  if (getType(focusOptions) != 'object') {
+  if (toType(focusOptions) !== 'object') {
     throw new Error('Invalid argument. argument is not object.');
   }
-  if (getType(windowId) != 'number' ||
-      getType(tabId) != 'number' ||
-      getType(state) != 'string') {
+  if (toType(windowId) !== 'number' ||
+      toType(tabId) !== 'number' ||
+      toType(state) !== 'string') {
     throw new Error(
         'Invalid a type of the value of the key in the focusOptions.');
   }
-  if (getType(callback) != 'function') {
+  if (toType(callback) !== 'function') {
     throw new Error("callback isn't function.");
   }
 
@@ -127,20 +127,20 @@ function ClosedTabFocus(
     case 'first':
     case 'last':
       chrome.tabs.query({ windowId: windowId }, function(result) {
-        var index = (state == 'first') ? 0 : result.length - 1;
+        var index = (state === 'first') ? 0 : result.length - 1;
         callback(result[index]);
       });
       break;
     case 'left':
     case 'right':
-      var stateGap = (state == 'left') ? -1 : 0;
+      var stateGap = (state === 'left') ? -1 : 0;
 
       var lastPrevious = TabIdHistory.lastPrevious(windowId);
       var findTab = TabIdList.find({ windowId: windowId, id: lastPrevious });
       chrome.tabs.query(
           { windowId: windowId, index: findTab.index + stateGap },
           function(result) {
-            if (result.length == 1) {
+            if (result.length === 1) {
               callback(result[0]);
             } else {
               throw new Error("The length of the result isn't one. length: " +
@@ -167,9 +167,9 @@ function WhileUrlOpen(tabs, whileOptions, callback)
 {
   console.log(arguments.callee.name);
 
-  if (getType(tabs) != 'array' ||
-      getType(whileOptions) != 'object' ||
-      getType(callback) != 'function') {
+  if (toType(tabs) !== 'array' ||
+      toType(whileOptions) !== 'object' ||
+      toType(callback) !== 'function') {
     throw new Error(
         'Invalid a type of arguments. you check a type of arguments.');
   }
@@ -177,20 +177,14 @@ function WhileUrlOpen(tabs, whileOptions, callback)
   var windowId = whileOptions.windowId;
   var exclude = whileOptions.exclude;
   var excludeOption = whileOptions.excludeOption;
-  if (getType(windowId) != 'number' ||
-      getType(exclude) != 'array' ||
-      getType(excludeOption) != 'string') {
+  whileOptions.begin = whileOptions.begin || 0;
+  whileOptions.end = whileOptions.end || tabs.length;
+  if (toType(windowId) !== 'number' ||
+      toType(exclude) !== 'array' ||
+      toType(excludeOption) !== 'string' ||
+      toType(whileOptions.begin) != 'number' ||
+      toType(whileOptions.end) != 'number') {
     throw new Error('Invalid type of the value of keys in the whileOptions.');
-  }
-  if (getType(whileOptions.begin) == 'undefined') {
-    whileOptions.begin = 0;
-  } else if (getType(whileOptions.begin) != 'number') {
-    throw new Error('Invalid type of the whileOptions.begin.');
-  }
-  if (getType(whileOptions.end) == 'undefined') {
-    whileOptions.end = tabs.length;
-  } else if (getType(whileOptions.begin) != 'number') {
-    throw new Error('Invalid type of the whileOptions.begin.');
   }
 
   // end process.
@@ -202,7 +196,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
     }
 
     chrome.tabs.get(tabs[whileOptions.begin].id, function(tab) {
-      if (tab.status == 'loading' && tab.url.length == 0) {
+      if (tab.status === 'loading' && tab.url.length === 0) {
         return;
       }
 
@@ -211,7 +205,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
       // check regex.
       for (var i = 0; i < exclude.length; i++) {
         var ex = Trim(exclude[i]);
-        if (ex == '') {
+        if (ex === '') {
           continue;
         }
 
@@ -241,7 +235,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
   var id = tab.id;
   var index = tab.index;
   var openerTabId = tab.openerTabId;
-  if (openerTabId == undefined && !afterOpeningTabInPopup.IsLocked()) {
+  if (openerTabId === void 0 && !afterOpeningTabInPopup.IsLocked()) {
     console.log('onCreated skip.');
     return;
   }
@@ -250,13 +244,12 @@ chrome.tabs.onCreated.addListener(function(tab) {
     tabIds.insert({ windowId: windowId, index: index, id: id });
 
     var storageName = 'open_pos_radio';
-    var state = items[storageName] ? items[storageName] :
-                                     default_values[storageName];
+    var state = items[storageName] || default_values[storageName];
     MoveTab(
         tabIdHistory,
         { windowId: windowId, tabId: id, state: state },
         function(toIndex) {
-          if (toIndex != null) {
+          if (toIndex !== null) {
             // expect default.
             chrome.tabs.move(
                 id, { windowId: windowId, index: toIndex }, function(moveTab) {
@@ -293,13 +286,11 @@ chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
   var windowId = moveInfo.windowId;
   var fromIndex = moveInfo.fromIndex;
   var toIndex = moveInfo.toIndex;
-
   tabIds.move({ windowId: windowId, fromIndex: fromIndex, toIndex: toIndex });
 });
 
 chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   console.log('onRemoved');
-
   if (removeInfo.isWindowClosing) {
     return;
   }
@@ -308,13 +299,12 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   var windowId = removeInfo.windowId;
 
   focusTabHistory.remove({ windowId: windowId, id: tabId });
-
   try {
     var lastPrevious = tabIdHistory.lastPrevious(windowId);
-    if (lastPrevious != tabId) {
+    if (lastPrevious !== tabId) {
     }
   } catch (e) {
-    if (e.message != 'History is not found windowId object.') {
+    if (e.message !== 'History is not found windowId object.') {
       console.log(e.message);
     }
 
@@ -327,20 +317,19 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 
   chrome.storage.local.get(null, function(items) {
     var storageName = 'close_focus_radio';
-    var state = items[storageName] ? items[storageName] :
-                                     default_values[storageName];
+    var state = items[storageName] || default_values[storageName];
     ClosedTabFocus(tabIds,
                    tabIdHistory,
                    focusTabHistory,
                    { windowId: windowId, tabId: tabId, state: state },
                    function(result) {
-          if (result == null) {
+          if (result === null) {
             // default process
             tabIds.remove({ windowId: windowId, id: tabId });
             tabIdHistory.remove({ windowId: windowId, id: tabId });
             chrome.tabs.query(
                 { windowId: windowId, active: true }, function(result) {
-                  if (result.length == 1) {
+                  if (result.length === 1) {
                     tabIdHistory.update(
                         { windowId: result[0].windowId, id: result[0].id });
                     afterClosedFocusTab.UnLock();
@@ -398,16 +387,14 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
 
   chrome.storage.local.get(null, function(items) {
     var storageName = 'open_focus_radio';
-    var state = items[storageName] ? items[storageName] :
-                                     default_values[storageName];
+    var state = items[storageName] || default_values[storageName];
 
     var oldWindowId = detachInfo.oldWindowId;
     var oldPosition = detachInfo.oldPosition;
-
     try {
       chrome.tabs.query(
           { windowId: oldWindowId, index: oldPosition }, function(result) {
-            if (result.length == 1) {
+            if (result.length === 1) {
               ClosedTabFocus(
                   tabIds,
                   tabIdHistory,
@@ -441,24 +428,19 @@ chrome.windows.onCreated.addListener(function(window) {
   console.log('windows.onCreated');
   chrome.storage.local.get(null, function(items) {
     var storageName = 'popup_window_is_open_tab_checkbox';
-    var state = items[storageName] ?
-                items[storageName] :
-                default_values[storageName];
-    if (window.type == 'popup' && state == true) {
+    var state = items[storageName] || default_values[storageName];
+    if (window.type === 'popup' && state === true) {
       chrome.windows.get(window.id, { populate: true }, function(window) {
         var storageName = 'popup_exclude_url_textarea';
-        var exclude = getType(items[storageName]) == 'string' ?
+        var exclude = toType(items[storageName]) === 'string' ?
                       items[storageName] : default_values[storageName];
 
         var storageName = 'popup_regopt_insensitive_checkbox';
-        var excludeOption = items[storageName] ?
-                            items[storageName] :
-                            default_values[storageName];
-        excludeOption = excludeOption == true ? 'i' : '';
+        var excludeOption = items[storageName] || default_values[storageName];
         WhileUrlOpen(window.tabs,
                      { windowId: lastFocusWindowId,
                        exclude: exclude.split('\n'),
-                       excludeOption: excludeOption },
+                       excludeOption: excludeOption ? 'i' : '' },
                      function(closed) {
               if (closed) {
                 chrome.windows.remove(window.id);
@@ -488,7 +470,7 @@ chrome.windows.getAll({ populate: true }, function(windows) {
     }
 
     chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
-      if (result.length == 1) {
+      if (result.length === 1) {
         var windowId = result[0].windowId;
         var tabId = result[0].id;
 
