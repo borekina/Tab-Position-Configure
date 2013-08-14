@@ -211,6 +211,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
 
         var re = new RegExp(ex, excludeOption);
         if (re.test(tab.url)) {
+          clearInterval(timerId);
           callback(false);
           return;
         }
