@@ -17,7 +17,7 @@ var locale_i18n = [
 
 function LoadValues(document, values, debugCallback)
 {
-  if (getType(document) != 'object') {
+  if (document === void 0) {
     throw new Error('First argument is not object.');
   }
 
@@ -25,10 +25,9 @@ function LoadValues(document, values, debugCallback)
   chrome.storage.local.get(null, function(items) {
     var debugList = []; // use Debug
 
-    items = getType(values) == 'object' ? values : items;
+    items = values || items;
     for (var key in items) {
       var value = items[key];
-
       var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
       if (elName) {
         switch (elName[2]) {
@@ -36,7 +35,7 @@ function LoadValues(document, values, debugCallback)
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"][@value="' + value + '"]',
                 document, null, 7, null);
-            if (element.snapshotLength != 1) {
+            if (element.snapshotLength !== 1) {
               throw 'LoadValues() Get ' + elName[2] + ' error.';
             }
             element.snapshotItem(0).checked = true;
@@ -45,7 +44,7 @@ function LoadValues(document, values, debugCallback)
           case 'checkbox':
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"]', document, null, 7, null);
-            if (element.snapshotLength != 1) {
+            if (element.snapshotLength !== 1) {
               throw 'LoadValues() Get ' + elName[2] + ' error.';
             }
             element.snapshotItem(0).checked = value;
@@ -54,7 +53,7 @@ function LoadValues(document, values, debugCallback)
           case 'text':
             var element = document.evaluate(
                 '//input[@name="' + elName[1] + '"]', document, null, 7, null);
-            if (element.snapshotLength != 1) {
+            if (element.snapshotLength !== 1) {
               throw 'LoadValues() Get ' + elName[2] + ' error.';
             }
             element.snapshotItem(0).value = Trim(value);
@@ -64,7 +63,7 @@ function LoadValues(document, values, debugCallback)
             var element = document.evaluate(
                 '//textarea[@name="' + elName[1] + '"]',
                 document, null, 7, null);
-            if (element.snapshotLength != 1) {
+            if (element.snapshotLength !== 1) {
               throw 'LoadValues() Get ' + elName[2] + ' error.';
             }
             element.snapshotItem(0).value = Trim(value);
@@ -74,7 +73,7 @@ function LoadValues(document, values, debugCallback)
       }
     }
 
-    if (getType(debugCallback) == 'function') {
+    if (toType(debugCallback) === 'function') {
       debugCallback(debugList);
     }
   });
@@ -82,7 +81,7 @@ function LoadValues(document, values, debugCallback)
 
 function SaveValues(values, debugCallback)
 {
-  if (getType(values) != 'object') {
+  if (toType(values) !== 'object') {
     throw 'First argument is not object.';
   }
 
@@ -140,64 +139,16 @@ function SaveValues(values, debugCallback)
   }
 
   chrome.storage.local.set(writeData, function() {
-    if (getType(debugCallback) == 'function') {
+    if (toType(debugCallback) === 'function') {
       debugCallback(debug);
     }
   });
 }
 
-function InitValues(document, checkTagList, default_values)
-{
-  if (getType(document) != 'object' ||
-      getType(checkTagList) != 'array' ||
-      getType(default_values) != 'object') {
-    throw 'InitValues Funciton. Argument Error.';
-  }
-
-  var debugs = {};
-  for (var i = 0; i < checkTagList.length; i++) {
-    var tag = checkTagList[i];
-    var elements = document.getElementsByTagName(tag);
-    for (var z = 0; z < elements.length; z++) {
-      var el = elements[z];
-      if (tag == 'textarea') {
-        // textarea tags
-        var storageName = el.name + '_' + el.tagName.toLowerCase();
-        var value = default_values[storageName] ?
-                    default_values[storageName] : '';
-        el.value = value;
-        debugs[storageName] = value;
-      } else {
-        // other tags
-        var storageName = el.name + '_' + el.type;
-        var value = default_values[storageName];
-        switch (el.type) {
-          case 'radio':
-            if (el.value == value) {
-              el.checked = true;
-              debugs[storageName] = value;
-            }
-            break;
-          case 'checkbox':
-            el.checked = value;
-            debugs[storageName] = default_values[storageName];
-            break;
-          case 'text':
-            value = value ? value : '';
-            el.value = value;
-            debugs[storageName] = value;
-            break;
-        }
-      }
-    }
-  }
-
-  return debugs;
-}
 
 function InitTranslation(document)
 {
-  if (getType(document) != 'object') {
+  if (document === void 0) {
     throw 'InitTranslation Function is Argument Error.';
   }
 
@@ -253,6 +204,7 @@ function checkRegex()
   elResult.innerHTML = replacedString;
 }
 
+
 /**
 * 正規表現クイックリファレンスの生成と表示
 */
@@ -291,7 +243,7 @@ function createRegexReference()
   var outputRegex = '<table>';
   var count = 0;
   for (var i in regex_items) {
-    if (count == 0) {
+    if (count === 0) {
       outputRegex += '<tr>';
     }
 
@@ -308,7 +260,7 @@ function createRegexReference()
     }
     count++;
   }
-  if (count != 0) {
+  if (count !== 0) {
     outputRegex += '</tr>';
   }
   outputRegex += '</table>';
@@ -316,7 +268,7 @@ function createRegexReference()
   // オプション部分作成
   var outputOption = '<table>';
   for (var i in regex_options) {
-    if (count == 0) {
+    if (count === 0) {
       outputOption += '<tr>';
     }
 
@@ -333,7 +285,7 @@ function createRegexReference()
     }
     count++;
   }
-  if (count != 0) {
+  if (count !== 0) {
     outputOption += '</tr>';
   }
   outputOption += '</table>';
@@ -346,8 +298,8 @@ function createRegexReference()
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize
   InitTranslation(document);
-  InitValues(document, ['input', 'textarea'], default_values);
-  LoadValues(document, null); // Config Load
+  LoadValues(document, default_values); // Config Init.
+  LoadValues(document, null); // Config Load.
 
   // buttons
   var status = document.getElementById('status');
@@ -361,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, timeoutTime);
   }, false);
   document.querySelector('#load').addEventListener('click', function(e) {
-    LoadValues(document, default_values);
+    LoadValues(document, null);
 
     status.innerHTML = 'Options Loaded.';
     setTimeout(function() {
@@ -369,8 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, timeoutTime);
   }, false);
   document.querySelector('#init').addEventListener('click', function(e) {
-    change_options = InitValues(
-        document, ['input', 'textarea'], default_values);
+    change_options = LoadValues(document, default_values);
 
     status.innerHTML = 'Options Initialized.';
     setTimeout(function() {
