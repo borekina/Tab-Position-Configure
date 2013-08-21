@@ -1,14 +1,29 @@
-/** background.js */
-
+/*jshint globalstrict: true*/
+'use strict';
 
 /**
  * Init is Run to initialize.
  */
-function Init()
+function init(version)
 {
-  console.log('Extension Initialized.');
-}
+  if (toType(version) !== 'string') {
+    throw new Error('Invalid type of arguments.');
+  }
 
+  console.log('Extension Initialized.');
+
+  chrome.storage.local.get(null, function(items) {
+    // All remove invalid options.
+    var removeKeys = [];
+    for (var key in items) {
+      if (!default_values.hasOwnProperty(key) && key !== version) {
+        removeKeys.push(key);
+      }
+    }
+    chrome.storage.local.remove(removeKeys, function() {
+    });
+  });
+}
 
 /**
  * onInstall is Run to Install.
@@ -19,7 +34,6 @@ function onInstall() {
   chrome.tabs.create({ url: '../../options.html' });
 }
 
-
 /**
  * onUpdate is Run to Extension Update.
  */
@@ -28,8 +42,8 @@ function onUpdate() {
 
   // ver 1.0.5 later
   // switch localStorage to chrome.storage.local.
-  var switchData = new Object();
-  for (key in default_values) {
+  var switchData = {};
+  for (var key in default_values) {
     var value = localStorage[key];
     if (value !== void 0) {
       var elName = key.match(/(^[\w]*)_(text|radio|checkbox|textarea)$/);
@@ -52,7 +66,6 @@ function onUpdate() {
   });
 }
 
-
 /**
  * Return extension version.
  * @return {Number} extension version.
@@ -63,13 +76,16 @@ function getVersion() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  Init();
+  var versionKey = 'version';
+
+  // この拡張機能外のスクリプトを使って行う初期化処理
+  init(versionKey);
 
   // この拡張機能のバージョンチェック
-  var version = 'version';
-  chrome.storage.local.get(version, function(items) {
-    var currVersion = getVersion();
-    var prevVersion = items[version] || localStorage[version];
+  var currVersion = getVersion();
+  chrome.storage.local.get(versionKey, function(storages) {
+    // ver chrome.storage.
+    var prevVersion = storages[versionKey];
     if (currVersion !== prevVersion) {
       // この拡張機能でインストールしたかどうか
       if (prevVersion === void 0) {
@@ -78,10 +94,9 @@ document.addEventListener('DOMContentLoaded', function() {
         onUpdate();
       }
 
-      var writeData = new Object();
-      writeData[version] = currVersion;
-      chrome.storage.local.set(writeData, function() {
-      });
+      var write = {};
+      write[versionKey] = currVersion;
+      chrome.storage.local.set(write);
     }
   });
 });

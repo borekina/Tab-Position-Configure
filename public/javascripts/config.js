@@ -1,3 +1,7 @@
+/*jshint globalstrict: true */
+/*jshint loopfunc: true */
+'use strict';
+
 var lastFocusWindowId = void 0;
 /*
  * The list of the tab id for the tab retrieval.
@@ -35,9 +39,9 @@ var afterClosedFocusTab = new Lock();
 var afterOpeningTabInPopup = new Lock();
 
 /* functions */
-function MoveTab(TabIdHistory, moveOptions, callback)
+function moveTab(TabIdHistory, moveOptions, callback)
 {
-  console.log(arguments.callee.name);
+  console.log('moveTab');
 
   var windowId = moveOptions.windowId;
   var tabId = moveOptions.tabId;
@@ -92,14 +96,13 @@ function MoveTab(TabIdHistory, moveOptions, callback)
       break;
     default:
       throw new Error("Can't moving tab. Argument is unknown.");
-      break;
   }
 }
 
-function ClosedTabFocus(
+function closedTabFocus(
     TabIdList, TabIdHistory, focusTabHistory, focusOptions, callback)
 {
-  console.log(arguments.callee.name);
+  console.log('closedTabFocus');
 
   var windowId = focusOptions.windowId;
   var tabId = focusOptions.tabId;
@@ -159,13 +162,12 @@ function ClosedTabFocus(
       break;
     default:
       throw new Error("Can't focus close tab. Argument is unknown.");
-      break;
   }
 }
 
-function WhileUrlOpen(tabs, whileOptions, callback)
+function whileUrlOpen(tabs, whileOptions, callback)
 {
-  console.log(arguments.callee.name);
+  console.log('whileUrlOpen');
 
   if (toType(tabs) !== 'array' ||
       toType(whileOptions) !== 'object' ||
@@ -182,8 +184,8 @@ function WhileUrlOpen(tabs, whileOptions, callback)
   if (toType(windowId) !== 'number' ||
       toType(exclude) !== 'array' ||
       toType(excludeOption) !== 'string' ||
-      toType(whileOptions.begin) != 'number' ||
-      toType(whileOptions.end) != 'number') {
+      toType(whileOptions.begin) !== 'number' ||
+      toType(whileOptions.end) !== 'number') {
     throw new Error('Invalid type of the value of keys in the whileOptions.');
   }
 
@@ -204,7 +206,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
 
       // check regex.
       for (var i = 0; i < exclude.length; i++) {
-        var ex = Trim(exclude[i]);
+        var ex = trim(exclude[i]);
         if (ex === '') {
           continue;
         }
@@ -219,8 +221,7 @@ function WhileUrlOpen(tabs, whileOptions, callback)
 
       afterOpeningTabInPopup.Lock();
       chrome.tabs.create(
-          { windowId: windowId, url: tab.url, active: false },
-          function(createdTab) {
+          { windowId: windowId, url: tab.url, active: false }, function() {
             // run in chrome.tabs.onCreated.
             /* afterOpeningTabInPopup.UnLock(); */
           }
@@ -246,22 +247,20 @@ chrome.tabs.onCreated.addListener(function(tab) {
 
     var storageName = 'open_pos_radio';
     var state = items[storageName] || default_values[storageName];
-    MoveTab(
+    moveTab(
         tabIdHistory,
         { windowId: windowId, tabId: id, state: state },
         function(toIndex) {
           if (toIndex !== null) {
             // expect default.
             chrome.tabs.move(
-                id, { windowId: windowId, index: toIndex }, function(moveTab) {
+                id, { windowId: windowId, index: toIndex }, function() {
                   // Activating the tab of the popup window.
                   if (afterOpeningTabInPopup.IsLocked()) {
-                    chrome.tabs.update(id, { active: true },
-                        function(updatedTab) {
+                    chrome.tabs.update(id, { active: true }, function() {
                           // release the lock here.
                           afterOpeningTabInPopup.UnLock();
-                        }
-                    );
+                    });
                   }
                 }
             );
@@ -269,7 +268,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
             // Activating the tab of the popup window.
             if (afterOpeningTabInPopup.IsLocked()) {
               chrome.tabs.update(id, { active: true },
-                  function(updatedTab) {
+                  function() {
                     // release the lock here.
                     afterOpeningTabInPopup.UnLock();
                   }
@@ -319,7 +318,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   chrome.storage.local.get(null, function(items) {
     var storageName = 'close_focus_radio';
     var state = items[storageName] || default_values[storageName];
-    ClosedTabFocus(tabIds,
+    closedTabFocus(tabIds,
                    tabIdHistory,
                    focusTabHistory,
                    { windowId: windowId, tabId: tabId, state: state },
@@ -396,14 +395,14 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
       chrome.tabs.query(
           { windowId: oldWindowId, index: oldPosition }, function(result) {
             if (result.length === 1) {
-              ClosedTabFocus(
+              closedTabFocus(
                   tabIds,
                   tabIdHistory,
                   focusTabHistory,
                   { windowId: oldWindowId, tabId: result[0].id, state: state },
-                  function(t) {
+                  function() {
                     tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
-                    tabIds.remove({ windowId: windowId, id: tabId });
+                    tabIds.remove({ windowId: oldWindowId, id: tabId });
                   }
               );
             } else {
@@ -414,7 +413,7 @@ chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
       );
     } catch (e) {
       tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
-      tabIds.remove({ windowId: windowId, id: tabId });
+      tabIds.remove({ windowId: oldWindowId, id: tabId });
       throw e;
     }
   });
@@ -436,9 +435,9 @@ chrome.windows.onCreated.addListener(function(window) {
         var exclude = toType(items[storageName]) === 'string' ?
                       items[storageName] : default_values[storageName];
 
-        var storageName = 'popup_regopt_insensitive_checkbox';
+        storageName = 'popup_regopt_insensitive_checkbox';
         var excludeOption = items[storageName] || default_values[storageName];
-        WhileUrlOpen(window.tabs,
+        whileUrlOpen(window.tabs,
                      { windowId: lastFocusWindowId,
                        exclude: exclude.split('\n'),
                        excludeOption: excludeOption ? 'i' : '' },
