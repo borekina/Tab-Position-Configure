@@ -221,11 +221,11 @@ function whileUrlOpen(tabs, whileOptions, callback)
         }
       }
 
-      afterOpeningTabInPopup.Lock(tab.windowId);
+      afterOpeningTabInPopup.Lock();
       chrome.tabs.create(
           { windowId: windowId, url: tab.url, active: false }, function() {
             // run in chrome.tabs.onCreated.
-            /* afterOpeningTabInPopup.UnLock(tab.windowId); */
+            /* afterOpeningTabInPopup.UnLock(); */
           }
       );
     });
@@ -242,7 +242,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
 
   tabIds.insert({ windowId: windowId, index: index, id: id });
 
-  if (openerTabId === void 0 && !afterOpeningTabInPopup.IsLocked(windowId)) {
+  if (openerTabId === void 0 && !afterOpeningTabInPopup.IsLocked()) {
     console.log('onCreated skip.');
     return;
   }
@@ -259,19 +259,19 @@ chrome.tabs.onCreated.addListener(function(tab) {
             chrome.tabs.move(
                 id, { windowId: windowId, index: toIndex }, function() {
                   // Activating the tab of the popup window.
-                  if (afterOpeningTabInPopup.IsLocked(windowId)) {
+                  if (afterOpeningTabInPopup.IsLocked()) {
                     chrome.tabs.update(id, { active: true }, function() {
                       // release the lock here.
-                      afterOpeningTabInPopup.UnLock(windowId);
+                      afterOpeningTabInPopup.UnLock();
                     });
                   }
                 }
             );
-          } else if (afterOpeningTabInPopup.IsLocked(windowId)) {
+          } else if (afterOpeningTabInPopup.IsLocked()) {
             // Activating the tab of the popup window.
             chrome.tabs.update(id, { active: true }, function() {
               // release the lock here.
-              afterOpeningTabInPopup.UnLock(windowId);
+              afterOpeningTabInPopup.UnLock();
             });
           }
         }
@@ -295,7 +295,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   }
 
   var windowId = removeInfo.windowId;
-  afterClosedFocusTab.Lock(windowId);
+  afterClosedFocusTab.Lock();
 
   focusTabHistory.remove({ windowId: windowId, id: tabId });
   try {
@@ -311,7 +311,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     console.log('onRemoved Process skip.');
     tabIds.remove({ windowId: windowId, id: tabId });
     tabIdHistory.remove({ windowId: windowId, id: tabId });
-    afterClosedFocusTab.UnLock(windowId);
+    afterClosedFocusTab.UnLock();
     return;
   }
 
@@ -325,9 +325,9 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
                    function(result) {
         tabIds.remove({ windowId: windowId, id: tabId });
         tabIdHistory.remove({ windowId: windowId, id: tabId });
-        if (afterClosedFocusTab.count(windowId) !== 1) {
+        if (afterClosedFocusTab.count() !== 1) {
           console.log('focus another tab when closed tab. it has skipped.');
-          afterClosedFocusTab.UnLock(windowId);
+          afterClosedFocusTab.UnLock();
           return;
         }
 
@@ -338,9 +338,9 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
               if (result.length === 1) {
                 tabIdHistory.update(
                   { windowId: result[0].windowId, id: result[0].id });
-                afterClosedFocusTab.UnLock(windowId);
+                afterClosedFocusTab.UnLock();
               } else {
-                afterClosedFocusTab.UnLock(windowId);
+                afterClosedFocusTab.UnLock();
                 throw new Error('Invalid the length of the result.');
               }
             }
@@ -349,7 +349,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
           // your setting process.
           chrome.tabs.update(result.id, { active: true }, function(tab) {
             tabIdHistory.update({ windowId: windowId, id: tab.id });
-            afterClosedFocusTab.UnLock(windowId);
+            afterClosedFocusTab.UnLock();
           });
         }
     });
@@ -361,7 +361,7 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 
   var windowId = activeInfo.windowId;
   var tabId = activeInfo.tabId;
-  if (afterClosedFocusTab.IsLocked(windowId)) {
+  if (afterClosedFocusTab.IsLocked()) {
     console.log('chrome.tabs.onActivated is skipped.');
     return;
   }
