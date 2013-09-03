@@ -265,53 +265,55 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
   try {
     var lastPrevious = tabIdHistory.lastPrevious(windowId);
     if (lastPrevious !== tabId) {
-      return;
+      throw new Error('Skip');
     }
   } catch (e) {
-    if (e.message !== 'History is not found windowId object.') {
-      console.log(e.message);
-    }
-
     console.log('onRemoved Process skip.');
     tabIds.remove(obj);
     tabIdHistory.remove(obj);
     afterClosedFocusTab--;
-    return;
+
+    if (e.message !== 'Skip' &&
+        e.message !== 'History is not found windowId object.') {
+      throw e;
+    } else {
+      return;
+    }
   }
 
   var state = getOptionsValue('close_focus_radio');
-  closedTabFocus(
-    { windowId: windowId, tabId: tabId, state: state }, function(result) {
-      tabIds.remove(obj);
-      tabIdHistory.remove(obj);
-      if (afterClosedFocusTab !== 1) {
-        console.log('focus another tab when closed tab. it has skipped.');
-        afterClosedFocusTab--;
-        return;
-      }
+  try {
+    closedTabFocus(
+      { windowId: windowId, tabId: tabId, state: state }, function(result) {
+        tabIds.remove(obj);
+        tabIdHistory.remove(obj);
+        if (afterClosedFocusTab-- !== 1) {
+          console.log('focus another tab when closed tab. it has skipped.');
+          return;
+        }
 
-      if (result === null) {
-        // default process
-        chrome.tabs.query(
-          { windowId: windowId, active: true }, function(result) {
-            if (result.length === 1) {
-              tabIdHistory.add(
-                { windowId: result[0].windowId, id: result[0].id });
-              afterClosedFocusTab--;
-            } else {
-              afterClosedFocusTab--;
-              throw new Error('Invalid the length of the result.');
+        if (result === null) {
+          // default process
+          chrome.tabs.query(
+            { windowId: windowId, active: true }, function(result) {
+              if (result.length === 1) {
+                tabIdHistory.add(
+                  { windowId: result[0].windowId, id: result[0].id });
+              } else {
+                throw new Error('Invalid the length of the result.');
+              }
             }
-          }
-        );
-      } else {
-        // your setting process.
-        chrome.tabs.update(result.id, { active: true }, function(tab) {
-          tabIdHistory.add({ windowId: windowId, id: tab.id });
-          afterClosedFocusTab--;
-        });
-      }
-  });
+          );
+        } else {
+          // your setting process.
+          chrome.tabs.update(result.id, { active: true }, function(tab) {
+            tabIdHistory.add({ windowId: windowId, id: tab.id });
+          });
+        }
+    });
+  } catch (e) {
+    afterClosedFocusTab--;
+  }
 });
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
