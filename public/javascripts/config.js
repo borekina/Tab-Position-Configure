@@ -22,6 +22,9 @@ var afterOpeningTabInPopup = 0;
 // the list of my options.
 var myOptions = null;
 
+/* Debug */
+/* console.log = function {}; */
+
 function getOptionsValue(name)
 {
   return myOptions[name] || default_values[name];
