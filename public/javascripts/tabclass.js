@@ -4,6 +4,7 @@
 /* TabIdList class */
 var TabIdList = function() {
   this.data = {};
+  this.data[1] = []; // the id of first window of Google Chrome is 1.
 };
 
 TabIdList.prototype.get = function(getOptions) {
@@ -157,6 +158,7 @@ TabIdList.prototype.isEmpty = function(windowId) {
 /* TabIdHistory class */
 var TabIdHistory = function() {
   this.history = {};
+  this.history[1] = []; // the id of first window of Google Chrome is 1.
 };
 
 TabIdHistory.prototype.get = function(getOptions) {
@@ -195,13 +197,24 @@ TabIdHistory.prototype.lastPrevious = function(windowId, gap) {
   return this.history[windowId][index];
 };
 
+TabIdHistory.prototype.add = function(addOptions) {
+  var windowId = addOptions.windowId;
+  var id = addOptions.id;
+  if (toType(windowId) !== 'number' || toType(id) !== 'number') {
+    throw new Error(
+        'Invalid type of the value of the key in the addOptions.');
+  }
+
+  if (!this.history.hasOwnProperty(windowId)) {
+    this.history[windowId] = [];
+  }
+
+  this.history[windowId].push(id);
+};
+
 TabIdHistory.prototype.update = function(updateOptions) {
   var windowId = updateOptions.windowId;
   var id = updateOptions.id;
-  if (toType(windowId) !== 'number' || toType(id) !== 'number') {
-    throw new Error(
-        'Invalid type of the value of the key in the updateOptions.');
-  }
 
   if (!this.history.hasOwnProperty(windowId)) {
     this.history[windowId] = [];
@@ -209,8 +222,8 @@ TabIdHistory.prototype.update = function(updateOptions) {
 
   var length = this.history[windowId].length;
   if (length === 0 || this.history[windowId][length - 1] !== id) {
-    this.remove({ windowId: windowId, id: id });
-    this.history[windowId].push(id);
+    this.add(updateOptions);
+    this.remove(updateOptions);
   }
 };
 

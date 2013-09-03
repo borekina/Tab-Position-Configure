@@ -1,8 +1,7 @@
 /*jshint globalstrict: true */
-/*jshint loopfunc: true */
 'use strict';
 
-var lastFocusWindowId = void 0;
+var lastFocusWindowId = null;
 /*
  * The list of the tab id for the tab retrieval.
  *
@@ -15,45 +14,27 @@ var tabIdHistory = new TabIdHistory();
 /* Used last tab only. */
 var focusTabHistory = new TabIdHistory();
 
-var Lock = function() {
-  this.__lock__ = 0;
-};
-
-Lock.prototype.Lock = function() {
-  this.__lock__++;
-};
-
-Lock.prototype.UnLock = function() {
-  this.__lock__ = (this.__lock__ > 0) ? this.__lock__ - 1 : this.__lock__;
-};
-
-Lock.prototype.IsLocked = function() {
-  return this.__lock__ > 0;
-};
-
-Lock.prototype.count = function() {
-  return this.__lock__;
-};
-
 // This done lock after using ClosedFocusTab.
-var afterClosedFocusTab = new Lock();
+var afterClosedFocusTab = 0;
 // Lock after opening the tab in popup window.
-var afterOpeningTabInPopup = new Lock();
+var afterOpeningTabInPopup = 0;
+
+// the list of my options.
+var myOptions = null;
+
+function getOptionsValue(name)
+{
+  return myOptions[name] || default_values[name];
+}
 
 /* functions */
-function moveTab(TabIdHistory, moveOptions, callback)
+function moveTab(moveOptions, callback)
 {
   console.log('moveTab');
 
   var windowId = moveOptions.windowId;
   var tabId = moveOptions.tabId;
   var state = moveOptions.state;
-  if (toType(TabIdHistory) !== 'object') {
-    throw new Error('Invalid argument. first argument is not class.');
-  }
-  if (toType(moveOptions) !== 'object') {
-    throw new Error('Invalid argument. second argument is not object.');
-  }
   if (toType(windowId) !== 'number' ||
       toType(tabId) !== 'number' ||
       toType(state) !== 'string') {
@@ -69,55 +50,39 @@ function moveTab(TabIdHistory, moveOptions, callback)
     case 'last':
       chrome.tabs.query({ windowId: windowId }, function(results) {
         var index = (state === 'first') ? 0 : results[results.length - 1].index;
-        if (toType(callback) === 'function') {
-          callback(index);
-        }
+        callback(index);
       });
       break;
     case 'left':
     case 'right':
       var stateGap = (state === 'left') ? 0 : 1;
 
-      var lastPrevious = TabIdHistory.lastPrevious(windowId);
+      var lastPrevious = tabIdHistory.lastPrevious(windowId);
       // Adjust gap whether open in open normally or open background.
       var gap = (lastPrevious === tabId) ? -1 : 0;
       chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
         if (result.length === 1) {
-          if (toType(callback) === 'function') {
-            callback(result[0].index + stateGap + gap);
-          }
+          callback(result[0].index + stateGap + gap);
         } else {
           throw new Error('The invalid result of the query.');
         }
       });
       break;
     case 'default':
-      if (toType(callback) === 'function') {
-        callback(null);
-      }
+      callback(null);
       break;
     default:
       throw new Error("Can't moving tab. Argument is unknown.");
   }
 }
 
-function closedTabFocus(
-    TabIdList, TabIdHistory, focusTabHistory, focusOptions, callback)
+function closedTabFocus(focusOptions, callback)
 {
   console.log('closedTabFocus');
 
   var windowId = focusOptions.windowId;
   var tabId = focusOptions.tabId;
   var state = focusOptions.state;
-
-  if (toType(TabIdList) !== 'object' ||
-      toType(TabIdHistory) !== 'object' ||
-      toType(focusOptions) !== 'object') {
-    throw new Error('First-Third arguments is not class.');
-  }
-  if (toType(focusOptions) !== 'object') {
-    throw new Error('Invalid argument. argument is not object.');
-  }
   if (toType(windowId) !== 'number' ||
       toType(tabId) !== 'number' ||
       toType(state) !== 'string') {
@@ -140,8 +105,8 @@ function closedTabFocus(
     case 'right':
       var stateGap = (state === 'left') ? -1 : 0;
 
-      var lastPrevious = TabIdHistory.lastPrevious(windowId);
-      var findTab = TabIdList.find({ windowId: windowId, id: lastPrevious });
+      var lastPrevious = tabIdHistory.lastPrevious(windowId);
+      var findTab = tabIds.find({ windowId: windowId, id: lastPrevious });
       var index = findTab.index + stateGap;
       index = index < 0 ? 0 : index;
       chrome.tabs.query({ windowId: windowId, index: index }, function(result) {
@@ -221,11 +186,11 @@ function whileUrlOpen(tabs, whileOptions, callback)
         }
       }
 
-      afterOpeningTabInPopup.Lock();
+      afterOpeningTabInPopup++;
       chrome.tabs.create(
           { windowId: windowId, url: tab.url, active: false }, function() {
             // run in chrome.tabs.onCreated.
-            /* afterOpeningTabInPopup.UnLock(); */
+            /* afterOpeningTabInPopup--; */
           }
       );
     });
@@ -242,50 +207,44 @@ chrome.tabs.onCreated.addListener(function(tab) {
 
   tabIds.insert({ windowId: windowId, index: index, id: id });
 
-  if (openerTabId === void 0 && !afterOpeningTabInPopup.IsLocked()) {
+  if (openerTabId === void 0 && afterOpeningTabInPopup <= 0) {
     console.log('onCreated skip.');
     return;
   }
 
-  chrome.storage.local.get(null, function(items) {
-    var storageName = 'open_pos_radio';
-    var state = items[storageName] || default_values[storageName];
-    moveTab(
-        tabIdHistory,
-        { windowId: windowId, tabId: id, state: state },
-        function(toIndex) {
-          if (toIndex !== null) {
-            // expect default.
-            chrome.tabs.move(
-                id, { windowId: windowId, index: toIndex }, function() {
-                  // Activating the tab of the popup window.
-                  if (afterOpeningTabInPopup.IsLocked()) {
-                    chrome.tabs.update(id, { active: true }, function() {
-                      // release the lock here.
-                      afterOpeningTabInPopup.UnLock();
-                    });
-                  }
+  var state = getOptionsValue('open_pos_radio');
+  moveTab({ windowId: windowId, tabId: id, state: state }, function(toIndex) {
+        if (toIndex !== null) {
+          // expect default.
+          chrome.tabs.move(
+              id, { windowId: windowId, index: toIndex }, function() {
+                // Activating the tab of the popup window.
+                if (afterOpeningTabInPopup > 0) {
+                  chrome.tabs.update(id, { active: true }, function() {
+                    // release the lock here.
+                    afterOpeningTabInPopup--;
+                  });
                 }
-            );
-          } else if (afterOpeningTabInPopup.IsLocked()) {
-            // Activating the tab of the popup window.
-            chrome.tabs.update(id, { active: true }, function() {
-              // release the lock here.
-              afterOpeningTabInPopup.UnLock();
-            });
-          }
+              }
+          );
+        } else if (afterOpeningTabInPopup > 0) {
+          // Activating the tab of the popup window.
+          chrome.tabs.update(id, { active: true }, function() {
+            // release the lock here.
+            afterOpeningTabInPopup--;
+          });
         }
-    );
   });
 });
 
 chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
   console.log('onMoved');
 
-  var windowId = moveInfo.windowId;
-  var fromIndex = moveInfo.fromIndex;
-  var toIndex = moveInfo.toIndex;
-  tabIds.move({ windowId: windowId, fromIndex: fromIndex, toIndex: toIndex });
+  tabIds.move({
+    windowId: moveInfo.windowId,
+    fromIndex: moveInfo.fromIndex,
+    toIndex: moveInfo.toIndex
+  });
 });
 
 chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
@@ -294,14 +253,16 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     return;
   }
 
-  var windowId = removeInfo.windowId;
-  afterClosedFocusTab.Lock();
+  afterClosedFocusTab++;
 
-  focusTabHistory.remove({ windowId: windowId, id: tabId });
+  var windowId = removeInfo.windowId;
+  var obj = { windowId: windowId, id: tabId };
+
+  focusTabHistory.remove(obj);
   try {
     var lastPrevious = tabIdHistory.lastPrevious(windowId);
     if (lastPrevious !== tabId) {
-      throw new Error('Closed tab is not current tab.');
+      return;
     }
   } catch (e) {
     if (e.message !== 'History is not found windowId object.') {
@@ -309,65 +270,58 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     }
 
     console.log('onRemoved Process skip.');
-    tabIds.remove({ windowId: windowId, id: tabId });
-    tabIdHistory.remove({ windowId: windowId, id: tabId });
-    afterClosedFocusTab.UnLock();
+    tabIds.remove(obj);
+    tabIdHistory.remove(obj);
+    afterClosedFocusTab--;
     return;
   }
 
-  chrome.storage.local.get(null, function(items) {
-    var storageName = 'close_focus_radio';
-    var state = items[storageName] || default_values[storageName];
-    closedTabFocus(tabIds,
-                   tabIdHistory,
-                   focusTabHistory,
-                   { windowId: windowId, tabId: tabId, state: state },
-                   function(result) {
-        tabIds.remove({ windowId: windowId, id: tabId });
-        tabIdHistory.remove({ windowId: windowId, id: tabId });
-        if (afterClosedFocusTab.count() !== 1) {
-          console.log('focus another tab when closed tab. it has skipped.');
-          afterClosedFocusTab.UnLock();
-          return;
-        }
+  var state = getOptionsValue('close_focus_radio');
+  closedTabFocus(
+    { windowId: windowId, tabId: tabId, state: state }, function(result) {
+      tabIds.remove(obj);
+      tabIdHistory.remove(obj);
+      if (afterClosedFocusTab !== 1) {
+        console.log('focus another tab when closed tab. it has skipped.');
+        afterClosedFocusTab--;
+        return;
+      }
 
-        if (result === null) {
-          // default process
-          chrome.tabs.query(
-            { windowId: windowId, active: true }, function(result) {
-              if (result.length === 1) {
-                tabIdHistory.update(
-                  { windowId: result[0].windowId, id: result[0].id });
-                afterClosedFocusTab.UnLock();
-              } else {
-                afterClosedFocusTab.UnLock();
-                throw new Error('Invalid the length of the result.');
-              }
+      if (result === null) {
+        // default process
+        chrome.tabs.query(
+          { windowId: windowId, active: true }, function(result) {
+            if (result.length === 1) {
+              tabIdHistory.add(
+                { windowId: result[0].windowId, id: result[0].id });
+              afterClosedFocusTab--;
+            } else {
+              afterClosedFocusTab--;
+              throw new Error('Invalid the length of the result.');
             }
-          );
-        } else {
-          // your setting process.
-          chrome.tabs.update(result.id, { active: true }, function(tab) {
-            tabIdHistory.update({ windowId: windowId, id: tab.id });
-            afterClosedFocusTab.UnLock();
-          });
-        }
-    });
+          }
+        );
+      } else {
+        // your setting process.
+        chrome.tabs.update(result.id, { active: true }, function(tab) {
+          tabIdHistory.add({ windowId: windowId, id: tab.id });
+          afterClosedFocusTab--;
+        });
+      }
   });
 });
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
   console.log('onActivated');
 
-  var windowId = activeInfo.windowId;
-  var tabId = activeInfo.tabId;
-  if (afterClosedFocusTab.IsLocked()) {
+  if (afterClosedFocusTab > 0) {
     console.log('chrome.tabs.onActivated is skipped.');
     return;
   }
 
-  tabIdHistory.update({ windowId: windowId, id: tabId });
-  focusTabHistory.update({ windowId: windowId, id: tabId });
+  var obj = { windowId: activeInfo.windowId, id: activeInfo.tabId };
+  tabIdHistory.add(obj);
+  focusTabHistory.add(obj);
 });
 
 chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
@@ -376,8 +330,9 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
   var newWindowId = attachInfo.newWindowId;
   var newPosition = attachInfo.newPosition;
   chrome.tabs.get(tabId, function(tab) {
-    tabIdHistory.update({ windowId: newWindowId, id: tab.id });
-    focusTabHistory.update({ windowId: newWindowId, id: tab.id });
+    var obj = { windowId: newWindowId, id: tab.id };
+    tabIdHistory.add(obj);
+    focusTabHistory.add(obj);
 
     tabIds.insert({ windowId: newWindowId, index: newPosition, id: tabId });
   });
@@ -386,38 +341,35 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
 chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
   console.log('onDetached');
 
-  chrome.storage.local.get(null, function(items) {
-    var storageName = 'open_focus_radio';
-    var state = items[storageName] || default_values[storageName];
-
-    var oldWindowId = detachInfo.oldWindowId;
-    var oldPosition = detachInfo.oldPosition;
-    try {
-      chrome.tabs.query(
-          { windowId: oldWindowId, index: oldPosition }, function(result) {
-            if (result.length === 1) {
-              closedTabFocus(
-                  tabIds,
-                  tabIdHistory,
-                  focusTabHistory,
-                  { windowId: oldWindowId, tabId: result[0].id, state: state },
-                  function() {
-                    tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
-                    tabIds.remove({ windowId: oldWindowId, id: tabId });
-                  }
-              );
-            } else {
-              throw new Error("The length of the result isn't one. length: " +
-                              result.length);
-            }
+  var oldWindowId = detachInfo.oldWindowId;
+  var oldPosition = detachInfo.oldPosition;
+  var obj = { windowId: oldWindowId, id: tabId };
+  try {
+    chrome.tabs.query(
+        { windowId: oldWindowId, index: oldPosition }, function(result) {
+          if (result.length === 1) {
+            var state = getOptionsValue('open_focus_radio');
+            closedTabFocus(
+                { windowId: oldWindowId, tabId: result[0].id, state: state },
+                function() {
+                  // Success even if throw.
+                  throw new Error('Success');
+                }
+            );
+          } else {
+            throw new Error("The length of the result isn't one. length: " +
+                            result.length);
           }
-      );
-    } catch (e) {
-      tabIdHistory.remove({ windowId: oldWindowId, id: tabId });
-      tabIds.remove({ windowId: oldWindowId, id: tabId });
+        }
+    );
+  } catch (e) {
+    tabIds.remove(obj);
+    tabIdHistory.remove(obj);
+
+    if (e.message !== 'Success') {
       throw e;
     }
-  });
+  }
 });
 
 chrome.windows.onFocusChanged.addListener(function(windowId) {
@@ -427,60 +379,74 @@ chrome.windows.onFocusChanged.addListener(function(windowId) {
 
 chrome.windows.onCreated.addListener(function(window) {
   console.log('windows.onCreated');
-  chrome.storage.local.get(null, function(items) {
-    var storageName = 'popup_window_is_open_tab_checkbox';
-    var state = items[storageName] || default_values[storageName];
-    if (window.type === 'popup' && state === true) {
-      chrome.windows.get(window.id, { populate: true }, function(window) {
-        var storageName = 'popup_exclude_url_textarea';
-        var exclude = toType(items[storageName]) === 'string' ?
-                      items[storageName] : default_values[storageName];
 
-        storageName = 'popup_regopt_insensitive_checkbox';
-        var excludeOption = items[storageName] || default_values[storageName];
-        whileUrlOpen(window.tabs,
-                     { windowId: lastFocusWindowId,
-                       exclude: exclude.split('\n'),
-                       excludeOption: excludeOption ? 'i' : '' },
-                     function(closed) {
-              if (closed) {
-                chrome.windows.remove(window.id);
-              }
+  var state = getOptionsValue('popup_window_is_open_tab_checkbox');
+  if (window.type === 'popup' && state === true) {
+    chrome.windows.get(window.id, { populate: true }, function(window) {
+      var exclude = getOptionsValue('popup_exclude_url_textarea');
+      var excludeOption = getOptionsValue('popup_regopt_insensitive_checkbox');
+      whileUrlOpen(window.tabs,
+                   { windowId: lastFocusWindowId,
+                     exclude: exclude.split('\n'),
+                     excludeOption: excludeOption ? 'i' : '' },
+                   function(closed) {
+            if (closed) {
+              chrome.windows.remove(window.id);
             }
-        );
-      });
-    }
-  });
+          }
+      );
+    });
+  }
 });
 
 chrome.windows.onRemoved.addListener(function(windowId) {
   console.log('windows.onRemoved');
-  tabIdHistory.remove({ windowId: windowId });
-  tabIds.remove({ windowId: windowId });
 
-  focusTabHistory.remove({ windowId: windowId });
+  var obj = { windowId: windowId };
+  tabIds.remove(obj);
+  tabIdHistory.remove(obj);
+  focusTabHistory.remove(obj);
 });
 
-chrome.windows.getAll({ populate: true }, function(windows) {
-  for (var i = 0; i < windows.length; i++) {
-    var windowId = windows[i].id;
-    for (var j = 0; j < windows[i].tabs.length; j++) {
-      var tabId = windows[i].tabs[j].id;
-      tabIds.add({ windowId: windowId, id: tabId });
-      tabIdHistory.update({ windowId: windowId, id: tabId });
-    }
+function initialize()
+{
+  var i, j;
+  var obj;
+  chrome.storage.local.get(null, function(items) {
+    myOptions = items;
 
-    chrome.tabs.query({ windowId: windowId, active: true }, function(result) {
-      if (result.length === 1) {
-        var windowId = result[0].windowId;
-        var tabId = result[0].id;
-
-        tabIdHistory.update({ windowId: windowId, id: tabId });
-
-        focusTabHistory.update({ windowId: windowId, id: tabId });
-      } else {
-        throw new Error('Invalid the length of the result.');
+    chrome.windows.getAll({ populate: true }, function(windows) {
+      for (i = 0; i < windows.length; i++) {
+        var windowId = windows[i].id;
+        for (j = 0; j < windows[i].tabs.length; j++) {
+          obj = { windowId: windowId, id: windows[i].tabs[j].id };
+          tabIds.add(obj);
+          tabIdHistory.add(obj);
+        }
       }
+
+      chrome.tabs.query({ active: true }, function(result) {
+          if (result.length === 0) {
+            throw new Error('Invalid the length of the result.');
+          }
+
+          for (i = 0; i < result.length; i++) {
+            obj = { windowId: result[i].windowId, id: result[i].id };
+            tabIdHistory.add(obj);
+            focusTabHistory.add(obj);
+          }
+        }
+      );
     });
+  });
+}
+
+chrome.runtime.onMessage.addListener(function(message) {
+  switch (message.event) {
+    case 'initialize':
+      initialize();
+      break;
   }
 });
+
+initialize();

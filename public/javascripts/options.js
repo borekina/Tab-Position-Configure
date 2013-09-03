@@ -162,6 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#save').addEventListener('click', function() {
     saveValues(document, ['checkbox', 'radio', 'text']);
 
+    chrome.runtime.sendMessage({ event: 'initialize' });
+
     status.innerHTML = 'Options Saved.';
     setTimeout(function() {
       status.innerHTML = '';
