@@ -1,29 +1,18 @@
 /*jshint globalstrict: true */
 'use strict';
 
-var lastFocusWindowId = null;
-/*
- * The list of the tab id for the tab retrieval.
- *
- * If the information in the tab can be acquired without this,
- * don't use this as much as possible.
- */
-var tabIds = new TabIdList();
-/* For Storing the tab id of the last. */
-var tabIdHistory = new TabIdHistory();
-/* Used last tab only. */
-var focusTabHistory = new TabIdHistory();
+var lastFocusWindowId = null; // last focus window.
+var tabIds = new TabIdList(); // the instance of a tab id for tab retrieval.
+var tabIdHistory = new TabIdHistory(); // For Storing the tab id of the last.
+var focusTabHistory = new TabIdHistory(); // Used last tab only.
+var afterClosedFocusTab = 0; // This done lock after using ClosedFocusTab.
+var afterOpeningTabInPopup = 0; // Lock after opening the tab in popup window.
+var myOptions = null; // the list of my options.
 
-// This done lock after using ClosedFocusTab.
-var afterClosedFocusTab = 0;
-// Lock after opening the tab in popup window.
-var afterOpeningTabInPopup = 0;
-
-// the list of my options.
-var myOptions = null;
-
-/* Debug */
-/* console.log = function {}; */
+/* Debug is comment out. */
+console.log = function() {};
+console.time = function() {};
+console.timeEnd = function() {};
 
 function getOptionsValue(name)
 {
@@ -139,9 +128,7 @@ function whileUrlOpen(tabs, whileOptions, callback)
 {
   console.log('whileUrlOpen');
 
-  if (toType(tabs) !== 'array' ||
-      toType(whileOptions) !== 'object' ||
-      toType(callback) !== 'function') {
+  if (toType(tabs) !== 'array' || toType(callback) !== 'function') {
     throw new Error(
         'Invalid a type of arguments. you check a type of arguments.');
   }
