@@ -73,10 +73,8 @@ function closedTabFocus(focusOptions, callback)
   console.log('closedTabFocus');
 
   var windowId = focusOptions.windowId;
-  var tabId = focusOptions.tabId;
   var state = focusOptions.state;
   if (toType(windowId) !== 'number' ||
-      toType(tabId) !== 'number' ||
       toType(state) !== 'string') {
     throw new Error(
         'Invalid a type of the value of the key in the focusOptions.');
@@ -270,33 +268,32 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 
   var state = getOptionsValue('close_focus_radio');
   try {
-    closedTabFocus(
-      { windowId: windowId, tabId: tabId, state: state }, function(result) {
-        tabIds.remove(obj);
-        tabIdHistory.remove(obj);
-        if (afterClosedFocusTab-- !== 1) {
-          console.log('focus another tab when closed tab. it has skipped.');
-          return;
-        }
+    closedTabFocus({ windowId: windowId, state: state }, function(result) {
+      tabIds.remove(obj);
+      tabIdHistory.remove(obj);
+      if (afterClosedFocusTab-- !== 1) {
+        console.log('focus another tab when closed tab. it has skipped.');
+        return;
+      }
 
-        if (result === null) {
-          // default process
-          chrome.tabs.query(
-            { windowId: windowId, active: true }, function(result) {
-              if (result.length === 1) {
-                tabIdHistory.add(
-                  { windowId: result[0].windowId, id: result[0].id });
-              } else {
-                throw new Error('Invalid the length of the result.');
-              }
+      if (result === null) {
+        // default process
+        chrome.tabs.query(
+          { windowId: windowId, active: true }, function(result) {
+            if (result.length === 1) {
+              tabIdHistory.add(
+                { windowId: result[0].windowId, id: result[0].id });
+            } else {
+              throw new Error('Invalid the length of the result.');
             }
-          );
-        } else {
-          // your setting process.
-          chrome.tabs.update(result.id, { active: true }, function(tab) {
-            tabIdHistory.add({ windowId: windowId, id: tab.id });
-          });
-        }
+          }
+        );
+      } else {
+        // your setting process.
+        chrome.tabs.update(result.id, { active: true }, function(tab) {
+          tabIdHistory.add({ windowId: windowId, id: tab.id });
+        });
+      }
     });
   } catch (e) {
     afterClosedFocusTab--;
@@ -325,7 +322,6 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
     var obj = { windowId: newWindowId, id: tab.id };
     tabIdHistory.add(obj);
     focusTabHistory.add(obj);
-
     tabIds.insert({ windowId: newWindowId, index: newPosition, id: tabId });
   });
 });
@@ -333,35 +329,22 @@ chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
 chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
   console.log('onDetached');
 
+  afterClosedFocusTab++;
+
   var oldWindowId = detachInfo.oldWindowId;
   var oldPosition = detachInfo.oldPosition;
   var obj = { windowId: oldWindowId, id: tabId };
-  try {
-    chrome.tabs.query(
-        { windowId: oldWindowId, index: oldPosition }, function(result) {
-          if (result.length === 1) {
-            var state = getOptionsValue('open_focus_radio');
-            closedTabFocus(
-                { windowId: oldWindowId, tabId: result[0].id, state: state },
-                function() {
-                  // Success even if throw.
-                  throw new Error('Success');
-                }
-            );
-          } else {
-            throw new Error("The length of the result isn't one. length: " +
-                            result.length);
-          }
-        }
-    );
-  } catch (e) {
-    tabIds.remove(obj);
-    tabIdHistory.remove(obj);
+  focusTabHistory.remove(obj);
 
-    if (e.message !== 'Success') {
-      throw e;
-    }
-  }
+  var state = getOptionsValue('close_focus_radio');
+  closedTabFocus({ windowId: oldWindowId, state: state }, function(tab) {
+    chrome.tabs.update(tab.id, { active: true }, function() {
+      tabIds.remove(obj);
+      tabIdHistory.remove(obj);
+
+      afterClosedFocusTab--;
+    });
+  });
 });
 
 chrome.windows.onFocusChanged.addListener(function(windowId) {
