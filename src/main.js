@@ -4,6 +4,7 @@
   var myOptions = null;
   var tabsCache = null;
   var latestHistory = {};
+  var latestHistoryLock = false;
 
   /**
    * 拡張機能がインストールされたときの処理
@@ -136,102 +137,122 @@
   {
     debug('closedTabFocus', tabId, info);
 
+    latestHistoryLock = true;
+
     var deferred = Promise.defer();
     setTimeout(function() {
       var windowId = info.windowId || info.oldWindowId;
       var tabIds = latestHistory[windowId];
 
-      getCurrentTab()
-      .then(function(currentTab) {
-        return new Promise(function(resolve, reject) {
+      var p1 = [];
+      p1.push(
+        new Promise(function(resolve, reject) {
           if (myOptions.closedTabFocus === 'default' ||
               info.isWindowClosing === true ||
-              (tabIds.length > 0 && tabIds[tabIds.length - 1] === currentTab.id)
-            ) {
+              tabId !== tabIds[tabIds.length - 1]) {
             debug("closedTabFocus is skipped.");
             reject();
             return;
           }
-          resolve();
-        });
-      })
-      .then(getTabsQuery)
-      .then(function(results) {
-        var p = [];
-        p.push(
-          new Promise(function(resolve) {
-            var t = results.filter(function(v) {
-              return v.windowId === windowId;
-            });
-            resolve(t);
-          })
-        );
-        p.push(
-          new Promise(function(resolve) {
-            var t2 = getIdDiffInSameWindow(tabsCache, results, windowId);
-            resolve(t2);
-          })
-        );
-        Promise.all(p).then(function(v) {
-          var deferred = Promise.defer();
+          resolve(true);
+        })
+      );
+      p1.push(getTabsQuery());
 
-          function callbackFunc(updated)
-          {
-            if (chrome.runtime.lastError) {
-              error(chrome.runtime.lastError.message);
-              deferred.reject();
-              return;
-            }
-            deferred.resolve(updated);
+      Promise.all(p1).then(function(v) {
+        var di = Promise.defer();
+
+        function callbackFunc(updated)
+        {
+          if (chrome.runtime.lastError) {
+            error(chrome.runtime.lastError.message);
+            di.reject();
+            return;
           }
+          di.resolve(updated);
+        }
 
-          var sameWinTabs = v[0];
-          var sameWinDiff = v[1];
+        var results = v[1];
 
-          setTimeout(function() {
-            var index;
-            var type = myOptions.closedTabFocus;
-            switch (type) {
-            case 'first':
-              chrome.tabs.update(
-                sameWinTabs[0].id, { active: true }, callbackFunc);
-              break;
-            case 'last':
-              chrome.tabs.update(
-                sameWinTabs[sameWinTabs.length - 1].id,
-                { active: true }, callbackFunc);
-              break;
-            case 'left':
-              index = sameWinDiff[0].index;
-              chrome.tabs.update(
-                sameWinTabs[index > 0 ? index - 1 : index].id,
-                { active: true }, callbackFunc);
-              break;
-            case 'right':
-              index = sameWinDiff[0].index;
-              chrome.tabs.update(
-                sameWinTabs[index].id, { active: true }, callbackFunc);
-              break;
-            case 'latest':
-              if (tabIds.length - 1 > 0) {
+        setTimeout(function() {
+          var p2 = [];
+          p2.push(
+            new Promise(function(resolve) {
+              var t = results.filter(function(v) {
+                return v.windowId === windowId;
+              });
+              resolve(t);
+            })
+          );
+          p2.push(
+            new Promise(function(resolve) {
+              var t2 = getIdDiffInSameWindow(tabsCache, results, windowId);
+              resolve(t2);
+            })
+          );
+
+          Promise.all(p2).then(function(v) {
+            var di = Promise.defer();
+
+            var sameWinTabs = v[0];
+            var sameWinDiff = v[1];
+
+            setTimeout(function() {
+              var index;
+              var type = myOptions.closedTabFocus;
+              switch (type) {
+              case 'first':
                 chrome.tabs.update(
-                  tabIds[tabIds.length - 2], { active: true }, callbackFunc);
-              } else {
-                deferred.resolve();
+                  sameWinTabs[0].id, { active: true }, callbackFunc);
+                break;
+              case 'last':
+                chrome.tabs.update(
+                  sameWinTabs[sameWinTabs.length - 1].id,
+                  { active: true }, callbackFunc);
+                break;
+              case 'left':
+                index = sameWinDiff[0].index;
+                chrome.tabs.update(
+                  sameWinTabs[index > 0 ? index - 1 : index].id,
+                  { active: true }, callbackFunc);
+                break;
+              case 'right':
+                index = sameWinDiff[0].index;
+                chrome.tabs.update(
+                  sameWinTabs[index].id, { active: true }, callbackFunc);
+                break;
+              case 'latest':
+                tabIds = latestHistory[windowId].filter(function(v) {
+                  return v !== tabId;
+                });
+
+                if (tabIds.length - 1 > 0) {
+                  chrome.tabs.update(
+                    tabIds[tabIds.length - 1], { active: true }, callbackFunc);
+                } else {
+                  di.reject();
+                }
+                break;
+              default:
+                error('closedTabFocus is invalid parameter.');
+                di.reject();
+                break;
               }
-              break;
-            default:
-              error('closedTabFocus is invalid parameter.');
-              deferred.reject();
-              break;
-            }
-            deferred.resolve();
-          }, 0);
-          return deferred.promise;
-        });
+              di.resolve();
+            }, 0);
+            return di.promise;
+          }).catch(di.reject);
+        }, 0);
+        return di.promise;
       })
-      .then(deferred.resolve)
-      .catch(deferred.reject);
+      .then(function() {
+        latestHistoryLock = false;
+        deferred.resolve();
+      })
+      .catch(function() {
+        latestHistoryLock = false;
+        deferred.reject();
+      });
     }, 0);
     return deferred.promise;
   }
@@ -239,10 +260,12 @@
   chrome.tabs.onActivated.addListener(function(activeInfo) {
     debug('tabs.onActivated', activeInfo);
 
-    if (!latestHistory.hasOwnProperty(activeInfo.windowId)) {
-      latestHistory[activeInfo.windowId] = [];
+    if (!latestHistoryLock) {
+      if (!latestHistory.hasOwnProperty(activeInfo.windowId)) {
+        latestHistory[activeInfo.windowId] = [];
+      }
+      latestHistory[activeInfo.windowId].push(activeInfo.tabId);
     }
-    latestHistory[activeInfo.windowId].push(activeInfo.tabId);
   });
 
   function updateTabsCache()
@@ -271,42 +294,48 @@
     updateTabsCache();
   });
 
+  function removeLatestHistory(windowId, tabId)
+  {
+    debug('removeLatestHistory', windowId, tabId);
+    return new Promise(function(resolve) {
+      latestHistory[windowId] =
+        latestHistory[windowId].filter(function(v) {
+          return v !== tabId;
+        });
+      resolve();
+    });
+  }
+
+  function afterOnRemoveds(windowId, tabId)
+  {
+    debug('afterOnRemoveds', windowId, tabId);
+    return new Promise(function(resolve) {
+      removeLatestHistory(windowId, tabId);
+      updateTabsCache();
+      resolve();
+    });
+  }
+
   chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     debug('tabs.onRemoved', tabId, removeInfo);
 
-    (function() {
-      return new Promise(function(resolve) {
-        latestHistory[removeInfo.windowId] =
-          latestHistory[removeInfo.windowId].filter(function(v) {
-            return v !== tabId;
-          });
-        resolve();
-      });
-    })()
+    closedTabFocus(tabId, removeInfo)
     .then(function() {
-      return closedTabFocus(tabId, removeInfo);
-    })
-    .then(updateTabsCache)
-    .catch(updateTabsCache);
+      return afterOnRemoveds(removeInfo.windowId, tabId);
+    }, function() {
+      return afterOnRemoveds(removeInfo.windowId, tabId);
+    });
   });
 
   chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
     debug('tabs.onDetached', tabId, detachInfo);
 
-    (function() {
-      return new Promise(function(resolve) {
-        latestHistory[detachInfo.oldWindowId] =
-          latestHistory[detachInfo.oldWindowId].filter(function(v) {
-            return v !== tabId;
-          });
-        resolve();
-      });
-    })()
+    closedTabFocus(tabId, detachInfo)
     .then(function() {
-      return closedTabFocus(tabId, detachInfo);
-    })
-    .then(updateTabsCache)
-    .catch(updateTabsCache);
+      return afterOnRemoveds(detachInfo.oldWindowId, tabId);
+    }, function() {
+      return afterOnRemoveds(detachInfo.oldWindowId, tabId);
+    });
   });
 
   chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
@@ -317,21 +346,24 @@
 
   function openPosition(tab)
   {
+    debug('openPosition', tab);
+
     var deferred = Promise.defer();
     setTimeout(function() {
-      (function() {
-        return new Promise(function(resolve) {
+      var p = [];
+      p.push(
+        new Promise(function(resolve, reject) {
           if (myOptions.openPosition === 'default') {
-            debug('tabs.onCreated is skipped.');
-            resolve();
+            debug('openPosition is skipped.');
+            reject();
             return;
           }
-          resolve();
-        });
-      })()
-      .then(getCurrentTab)
-      .then(function(currentTab) {
-        return new Promise(function(resolve, reject) {
+          resolve(true);
+        })
+      );
+      p.push(getCurrentTab());
+      p.push(
+        new Promise(function(resolve, reject) {
           if (tab.openerTabId) {
             chrome.tabs.get(tab.openerTabId, function(parentTab) {
               if (chrome.runtime.lastError) {
@@ -342,44 +374,42 @@
               resolve(parentTab);
             });
           } else {
-            return resolve(currentTab);
+            resolve(null);
           }
-        });
-      })
-      .then(function(parentTab) {
-        var deferred = Promise.defer();
-        setTimeout(function() {
-          function callbackFunc(tabs) {
-            if (chrome.runtime.lastError) {
-              error(chrome.runtime.lastError.message);
-              deferred.reject();
-              return;
-            }
-            deferred.resolve(tabs);
-          }
+        })
+      );
 
-          switch (myOptions.openPosition) {
-          case 'first':
-            chrome.tabs.move(tab.id, { index: 0 }, callbackFunc);
-            break;
-          case 'last':
-            chrome.tabs.move(tab.id, { index: -1 }, callbackFunc);
-            break;
-          case 'right':
-            chrome.tabs.move(
-              tab.id, { index: parentTab.index + 1 }, callbackFunc);
-            break;
-          case 'left':
-            chrome.tabs.move(tab.id, { index: parentTab.index }, callbackFunc);
-            break;
-          default:
+      Promise.all(p).then(function(values) {
+        var parentTab = values[2] || values[1];
+
+        function callbackFunc(tabs) {
+          if (chrome.runtime.lastError) {
+            error(chrome.runtime.lastError.message);
             deferred.reject();
+            return;
           }
-        }, 0);
-        return deferred.promise;
-      })
-      .then(deferred.resolve)
-      .catch(deferred.reject);
+          deferred.resolve(tabs);
+        }
+
+        switch (myOptions.openPosition) {
+        case 'first':
+          chrome.tabs.move(tab.id, { index: 0 }, callbackFunc);
+          break;
+        case 'last':
+          chrome.tabs.move(tab.id, { index: -1 }, callbackFunc);
+          break;
+        case 'right':
+          chrome.tabs.move(
+            tab.id, { index: parentTab.index + 1 }, callbackFunc);
+          break;
+        case 'left':
+          chrome.tabs.move(tab.id, { index: parentTab.index }, callbackFunc);
+          break;
+        default:
+          deferred.reject();
+          break;
+        }
+      }, deferred.reject);
     }, 0);
     return deferred.promise;
   }
@@ -388,7 +418,9 @@
     debug('tabs.onCreated', tab);
 
     updateTabsCache()
-    .then(openPosition);
+    .then(function() {
+      return openPosition(tab);
+    });
   });
 
   function getAllWindows(obj)
@@ -571,9 +603,12 @@
   function initialize()
   {
     debug('initialize');
-
-    versionCheckAndUpdate()
-    .then(loadOptions);
+    return new Promise(function(resolve, reject) {
+      var p = [];
+      p.push(versionCheckAndUpdate());
+      p.push(loadOptions());
+      Promise.all(p).then(resolve, reject);
+    });
   }
 
   chrome.runtime.onMessage.addListener(function(message) {
