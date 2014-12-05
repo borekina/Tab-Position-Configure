@@ -3,97 +3,80 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Options</title>
-    <script type="text/javascript" src="public/javascripts/common.js"></script>
-    <script type="text/javascript" src="public/javascripts/regex_tool.js"></script>
-    <script type="text/javascript" src="public/javascripts/options.js"></script>
     <link rel="stylesheet" href="css/options.css" type="text/css" media="screen" charset="utf-8">
 </head>
 <body>
+  <header><!--{{{-->
+    <h2><span translation="extName"></span>&nbsp;<span translation="option"></span></h2>
+  </header><!--}}}-->
+  <section><!--{{{-->
+    <article><!--{{{-->
+      <fieldset>
+        <legend translation="openTabTitle"></legend>
+        <div><input type="radio" name="openPosition" value="first"><span translation="first"></span></div>
+        <div><input type="radio" name="openPosition" value="left"><span translation="open_tab_current"></span><span translation="left"></span></div>
+        <div><input type="radio" name="openPosition" value="right"><span translation="open_tab_current"></span><span translation="right"></span></div>
+        <div><input type="radio" name="openPosition" value="last"><span translation="last"></span></div>
+        <div><input type="radio" name="openPosition" value="default"><span translation="default"></span></div>
+      </fieldset>
+    </article><!--}}}-->
 
-<h2><span class="extNameText"></span>&nbsp;<span class="optionText"></span></h2>
+    <article><!--{{{-->
+      <fieldset>
+        <legend translation="closedTabFocusTitle"></legend>
+        <div><input type="radio" name="closedTabFocus" value="first"><span translation="first"></span></div>
+        <div><input type="radio" name="closedTabFocus" value="left"><span translation="close_tab_current"></span><span translation="left"></span></div>
+        <div><input type="radio" name="closedTabFocus" value="right"><span translation="close_tab_current"></span><span translation="right"></span></div>
+        <div><input type="radio" name="closedTabFocus" value="last"><span translation="last"></span></div>
+        <div><input type="radio" name="closedTabFocus" value="latest"><span translation="latest"></span></div>
+        <div><input type="radio" name="closedTabFocus" value="default"><span translation="default"></span></div>
+      </fieldset>
+    </article><!--}}}-->
 
-<div class="open_tabTitleText"></div>
-<ul>
-    <li><input type="radio" name="open_pos" value="first"><span class="firstText"></span></li>
-    <li><input type="radio" name="open_pos" value="left"><span class="open_tab_currentText"></span>&nbsp;<span class="leftText"></span></li>
-    <li><input type="radio" name="open_pos" value="right"><span class="open_tab_currentText"></span>&nbsp;<span class="rightText"></span></li>
-    <li><input type="radio" name="open_pos" value="last"><span class="lastText"></span></li>
-    <li><input type="radio" name="open_pos" value="default" checked><span class="defaultText"></span></li>
-</ul>
-
-<div class="close_tabTitleText"></div>
-<ul>
-    <li><input type="radio" name="close_focus" value="first"><span class="firstText"></span></li>
-    <li><input type="radio" name="close_focus" value="left"><span class="close_tab_currentText"></span>&nbsp;<span class="leftText"></span></li>
-    <li><input type="radio" name="close_focus" value="right"><span class="close_tab_currentText"></span>&nbsp;<span class="rightText"></span></li>
-    <li><input type="radio" name="close_focus" value="last"><span class="lastText"></span></li>
-    <li><input type="radio" name="close_focus" value="lastSelect"><span class="lastSelectText"></span></li>
-    <li><input type="radio" name="close_focus" value="default" checked><span class="defaultText"></span></li>
-</ul>
-
-<div class="otherTitleText"></div>
-<ul>
-    <li><input name="other_domain_open" type="checkbox"><span class="other_domain_openText"></span></li>
-    <li style="margin-left: 1em;">
-        <div><span class="exclude_urlText"></span><a class="open_tool" href='#'><span class="regex_toolText"></span></a></div>
-        <textarea id="exclude_url" name="exclude_url" rows="8" cols="50" wrap="off" style="float: left"></textarea>
-        <div class="optionText"></div>
-        <ul>
-            <li><input type="checkbox" name="domain_regopt_insensitive"><span class="regex_confuseText"></span></li>
-        </ul>
-    </li>
-    <li style="clear: left"><input name="popup_window_is_open_tab" type="checkbox"><span class="popup_window_is_open_tabText"></span></li>
-    <li style="margin-left: 1em;"><div class="exclude_urlText"></div>
-        <textarea id="popup_exclude_url" name="popup_exclude_url" rows="8" cols="50" wrap="off" style="float: left"></textarea>
-        <div class="optionText"></div>
-        <ul>
-            <li><input type="checkbox" name="popup_regopt_insensitive"><span class="regex_confuseText"></span></li>
-        </ul>
-    </li>
-    <li style="clear: left"></li>
-</ul>
-
-<div>
-    <button id="save">Save</button>
-    <button id="load">Load</button>
-    <button id="init">Init</button>
-    <span id="status" style="color: green;"></span>
-</div>
-
-<hr>
-<div>
-    <button id="export"><span class="exportText"></span></button>
-    <button id="import"><span class="importText"></span></button>
-    <span id="config_view_status"></span>
-</div>
-
-<textarea id="config_view" cols="50" rows="5"></textarea>
-
-<!-- 正規表現確認ツール -->
-<div id="tool_box">
-    <button class="close_btn open_tool">×</button>
-    <div id="regexp">
-        <div class="regexText"></div>
-        /<input type="text" name="regular_expression">/<input type="text" name="options" size="2" maxlength="3">
-    </div>
-    <div class="regex_compare_stringText"></div>
-    <textarea id="compare_string" name="compare_string"></textarea>
-    <span id="result"><span class="regex_result"></span></span>
-    <div id="clear"></div>
-    <div id="reference_area">
-        <div class="regex_referenceText"></div>
-        <div id="regex_reference"></div>
-    </div>
-    <div id="reference_option_area">
-        <div class="regex_option_referenceText"></div>
-        <div id="regex_option_reference"></div>
-
-        <div id="information_area">
-            <div class="regex_informationText"></div>
-            <div class="regex_refURLText"></div>
+    <article><!--{{{-->
+      <fieldset>
+        <legend translation="otherTitle"></legend>
+        <div><input type="checkbox" name="otherDomainOpen"><span translation="other_domain_open"></span></div>
+        <div style="float: left;"><textarea name="excludeUrl"></textarea></div>
+        <div>
+          <div translation="option"></div>
+          <input type="checkbox" name="excludeUrlRegexInsentive"><span translation="regex_confuse"></span>
         </div>
-    </div>
-</div>
+        <div style="clear: left;"></div>
 
+        <div><input type="checkbox" name="popupWindowIsOpenningTab"><span translation="popup_window_is_open_tab"></span></div>
+        <div style="float: left;"><textarea name="popupExcludeUrl"></textarea></div>
+        <div>
+          <div translation="option"></div>
+          <input type="checkbox" name="popupExcludeUrlRegexInsentive"><span translation="regex_confuse"></span>
+        </div>
+        <div style="clear: left;"></div>
+      </fieldset>
+    </article><!--}}}-->
+  </section><!--}}}-->
+  <footer><!--{{{-->
+    <fieldset>
+      <legend translation="storage"></legend>
+      <button id="save" translation="save"></button>
+      <button id="load" translation="load"></button>
+      <button id="init" translation="init"></button>
+      <span id="storageStatus" style="color: green;"></span>
+    </fieldset>
+
+    <fieldset>
+      <legend translation="setvalues"></legend>
+      <div>
+        <button id="export" translation="export"></button>
+        <button id="import" translation="import"></button>
+        <span id="setValuesStatus" style="color: green;"></span>
+      </div>
+      <textarea id="config"></textarea>
+    </fieldset>
+  </footer><!--}}}-->
+
+<script type="text/javascript" src="src/debug.js"></script>
+<script type="text/javascript" src="src/common.js"></script>
+<script type="text/javascript" src="src/common_func.js"></script>
+<script type="text/javascript" src="src/options.js"></script>
 </body>
 </html>

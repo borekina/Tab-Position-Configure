@@ -7,17 +7,29 @@
     "message": "This extension can change the action of the tab.",
     "description": "Extension Work"
   },
-  "open_tabTitle": {
+  "openTabTitle": {
     "message": "Position to open the tab",
     "description": "head in Options."
   },
-  "close_tabTitle": {
+  "closedTabFocusTitle": {
     "message": "Tab which you want to focus when a tab is closed",
     "description": "head in Options."
   },
   "otherTitle": {
     "message": "Other",
     "description": "head in Options."
+  },
+  "save": {
+    "message": "Save",
+    "description": "saving"
+  },
+  "load": {
+    "message": "Load",
+    "description": "Loading"
+  },
+  "init": {
+    "message": "Init",
+    "description": "Initialize"
   },
   "export": {
     "message": "export",
@@ -47,7 +59,7 @@
     "message": "Last",
     "description": "Last"
   },
-  "lastSelect": {
+  "latest": {
     "message": "Last used tab",
     "description": "Last used tab"
   },
@@ -75,6 +87,16 @@
     "message": "The page of the address unlike a current page opens a new tab",
     "description": "Item in Options page."
   },
+  "storage": {
+    "message": "Storage",
+    "description": "area title in option page."
+  },
+  "setvalues": {
+    "message": "Setting value",
+    "description": "area title in option page."
+  },
+
+
   "regex_refURL": {
     "message": "<a href='https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Regular_Expressions' target='_blank'>Detail reference</a><br>Origin of reference: <a href='http://www.rubular.com/' target='_blank'>Rubular</a>",
     "description": "Reference Link"

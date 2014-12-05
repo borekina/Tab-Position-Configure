@@ -7,17 +7,29 @@
     "message": "タブの動作を設定します。",
     "description": "Extension Work"
   },
-  "open_tabTitle": {
+  "openTabTitle": {
     "message": "タブを開く位置",
     "description": "head in Options."
   },
-  "close_tabTitle": {
+  "closedTabFocusTitle": {
     "message": "タブを閉じた後のフォーカス",
     "description": "head in Options."
   },
   "otherTitle": {
     "message": "その他",
     "description": "head in Options."
+  },
+  "save": {
+    "message": "保存",
+    "description": "saving"
+  },
+  "load": {
+    "message": "読み込み",
+    "description": "Loading"
+  },
+  "init": {
+    "message": "初期化",
+    "description": "Initialize"
   },
   "export": {
     "message": "エクスポート",
@@ -47,7 +59,7 @@
     "message": "最後",
     "description": "Last"
   },
-  "lastSelect": {
+  "latest": {
     "message": "最後に使用したタブ",
     "description": "Last used tab"
   },
@@ -75,6 +87,16 @@
     "message": "ポップアップウィンドウはタブで開く",
     "description": "Item in Options page."
   },
+  "storage": {
+    "message": "ストレージ",
+    "description": "area title in option page."
+  },
+  "setvalues": {
+    "message": "設定値",
+    "description": "area title in option page."
+  },
+
+
   "regex_tool": {
     "message": "正規表現確認ツール",
     "description": "正規表現確認ツール"

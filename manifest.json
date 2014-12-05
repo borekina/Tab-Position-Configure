@@ -11,18 +11,19 @@
     },
     "background" : {
       "scripts": [
-        "public/javascripts/common.js",
-        "public/javascripts/background.js",
-        "public/javascripts/tabclass.js",
-        "public/javascripts/config.js"
+        "src/debug.js",
+        "src/common.js",
+        "src/common_func.js",
+        "src/main.js"
       ]
     },
     "content_scripts": [
       {
         "matches": [ "http://*/*", "https://*/*" ],
         "js": [
-          "public/javascripts/common.js",
-          "public/javascripts/content_scripts.js"
+          "src/common.js",
+          "src/common_func.js",
+          "src/content_scripts/openDifferentDomain.js"
         ]
       }
     ],
