@@ -36,6 +36,8 @@
         "profile"    : true,
         "profileEnd" : true,
 
+        "getFile"           : true,
+        "setTranslations"   : true,
         "deepCompare"       : true,
         "cloneObject"       : true,
         "getDataType"       : true,

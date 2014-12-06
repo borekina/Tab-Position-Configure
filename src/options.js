@@ -3,46 +3,6 @@
 
   var myOptions = null;
 
-  function getFile(path) // {{{
-  {
-    var deferred = Promise.defer();
-    setTimeout(function() {
-      var req = new XMLHttpRequest();
-      req.open('GET', path);
-      req.onreadystatechange = function() {
-        if (req.readyState === 4) {
-          if (req.status === 200) {
-            deferred.resolve(req.responseText);
-          } else {
-            error("Don't get file.", path);
-            deferred.reject();
-          }
-        }
-      };
-      req.send();
-    }, 0);
-    return deferred.promise;
-  }
-  // }}}
-
-  function setTranslations(translationObject)//{{{
-  {
-    var deferred = Promise.defer();
-    setTimeout(function() {
-      var els = document.evaluate('//*[@translation]', document, null, 7, null);
-      var item, name;
-      for (var i = 0, len = els.snapshotLength; i < len; i++) {
-        item = els.snapshotItem(i);
-        name = item.getAttribute('translation');
-        if (translationObject.hasOwnProperty(name)) {
-          item.textContent = chrome.i18n.getMessage(name);
-        }
-      }
-      deferred.resolve();
-    }, 0);
-    return deferred.promise;
-  }//}}}
-
   function setSettingsToStorage(settings)//{{{
   {
     var deferred = Promise.defer();
@@ -239,7 +199,7 @@
   document.addEventListener('DOMContentLoaded', function() {//{{{
     getFile(translationPath)
     .then(function(response) {
-      return setTranslations(JSON.parse(response));
+      return setTranslations(document, JSON.parse(response));
     })
     .then(initOptions)
     .then(loadOptions)

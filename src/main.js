@@ -9,37 +9,37 @@
   /**
    * 拡張機能がインストールされたときの処理
    */
-  function onInstall() {
+  function onInstall() {//{{{
     debug('Extension Installed.');
 
     return new Promise(function(resolve) {
       // インストール時にオプションページを表示
       chrome.tabs.create({ url: optionPage }, resolve);
     });
-  }
+  }//}}}
 
   /**
    * 拡張機能がアップデートされたときの処理
    */
-  function onUpdate() {
+  function onUpdate() {//{{{
     debug('Extension Updated.');
 
     return new Promise(function(resolve) {
       resolve();
     });
-  }
+  }//}}}
 
   /**
    * 拡張機能のバージョンを返す
    * @return {String} 拡張機能のバージョン.
    */
-  function getVersion() {
+  function getVersion() {//{{{
     debug('getVersion');
     var details = chrome.app.getDetails();
     return details.version;
-  }
+  }//}}}
 
-  function versionCheckAndUpdate()
+  function versionCheckAndUpdate()//{{{
   {
     debug('versionCheckUpdate');
 
@@ -75,9 +75,9 @@
       }
     });
     return deferred.promise;
-  }
+  }//}}}
 
-  function getCurrentTab()
+  function getCurrentTab()//{{{
   {
     debug('getCurrentTab');
 
@@ -91,9 +91,9 @@
       deferred.resolve(tab);
     });
     return deferred.promise;
-  }
+  }//}}}
 
-  function getTabsQuery(object)
+  function getTabsQuery(object)//{{{
   {
     return new Promise(function(resolve, reject) {
       chrome.tabs.query(object || {}, function(results) {
@@ -105,9 +105,9 @@
         resolve(results);
       });
     });
-  }
+  }//}}}
 
-  function getIdDiff(x, y)
+  function getIdDiff(x, y)//{{{
   {
     debug('getIdDiff', x, y);
     return x.filter(function(v) {
@@ -118,9 +118,9 @@
       }
       return true;
     });
-  }
+  }//}}}
 
-  function getIdDiffInSameWindow(x, y, windowId)
+  function getIdDiffInSameWindow(x, y, windowId)//{{{
   {
     debug('getIdDiffInSameWindow', x, y, windowId);
     function filterFunc(v)
@@ -131,9 +131,9 @@
     var t1 = x.filter(filterFunc);
     var t2 = y.filter(filterFunc);
     return getIdDiff(t1, t2);
-  }
+  }//}}}
 
-  function closedTabFocus(tabId, info)
+  function closedTabFocus(tabId, info)//{{{
   {
     debug('closedTabFocus', tabId, info);
 
@@ -255,9 +255,9 @@
       });
     }, 0);
     return deferred.promise;
-  }
+  }//}}}
 
-  chrome.tabs.onActivated.addListener(function(activeInfo) {
+  chrome.tabs.onActivated.addListener(function(activeInfo) {//{{{
     debug('tabs.onActivated', activeInfo);
 
     if (!latestHistoryLock) {
@@ -266,9 +266,9 @@
       }
       latestHistory[activeInfo.windowId].push(activeInfo.tabId);
     }
-  });
+  });//}}}
 
-  function updateTabsCache()
+  function updateTabsCache()//{{{
   {
     debug('updateTabsCache');
 
@@ -282,21 +282,21 @@
       })
       .then(resolve, reject);
     });
-  }
+  }//}}}
 
-  chrome.tabs.onReplaced.addListener(function(addedTabId, removeTabId) {
+  chrome.tabs.onReplaced.addListener(function(addedTabId, removeTabId) {//{{{
     debug('tabs.onReplaced', addedTabId, removeTabId);
 
     updateTabsCache();
-  });
+  });//}}}
 
-  chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {
+  chrome.tabs.onMoved.addListener(function(tabId, moveInfo) {//{{{
     debug('tabs.onMoved', tabId, moveInfo);
 
     updateTabsCache();
-  });
+  });//}}}
 
-  function removeLatestHistory(windowId, tabId)
+  function removeLatestHistory(windowId, tabId)//{{{
   {
     debug('removeLatestHistory', windowId, tabId);
     return new Promise(function(resolve) {
@@ -306,9 +306,9 @@
         });
       resolve();
     });
-  }
+  }//}}}
 
-  function afterOnRemoveds(windowId, tabId)
+  function afterOnRemoveds(windowId, tabId)//{{{
   {
     debug('afterOnRemoveds', windowId, tabId);
     return new Promise(function(resolve) {
@@ -316,9 +316,9 @@
       updateTabsCache();
       resolve();
     });
-  }
+  }//}}}
 
-  chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
+  chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {//{{{
     debug('tabs.onRemoved', tabId, removeInfo);
 
     closedTabFocus(tabId, removeInfo)
@@ -327,9 +327,9 @@
     }, function() {
       return afterOnRemoveds(removeInfo.windowId, tabId);
     });
-  });
+  });//}}}
 
-  chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
+  chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {//{{{
     debug('tabs.onDetached', tabId, detachInfo);
 
     closedTabFocus(tabId, detachInfo)
@@ -338,15 +338,15 @@
     }, function() {
       return afterOnRemoveds(detachInfo.oldWindowId, tabId);
     });
-  });
+  });//}}}
 
-  chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
+  chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {//{{{
     debug('tabs.onAttached', tabId, attachInfo);
 
     updateTabsCache();
-  });
+  });//}}}
 
-  function openPosition(tab)
+  function openPosition(tab)//{{{
   {
     debug('openPosition', tab);
 
@@ -414,18 +414,18 @@
       }, deferred.reject);
     }, 0);
     return deferred.promise;
-  }
+  }//}}}
 
-  chrome.tabs.onCreated.addListener(function(tab) {
+  chrome.tabs.onCreated.addListener(function(tab) {//{{{
     debug('tabs.onCreated', tab);
 
     updateTabsCache()
     .then(function() {
       return openPosition(tab);
     });
-  });
+  });//}}}
 
-  function getAllWindows(obj)
+  function getAllWindows(obj)//{{{
   {
     debug('getAllWindows', obj);
 
@@ -439,9 +439,9 @@
         resolve(windows);
       });
     });
-  }
+  }//}}}
 
-  function popupWindowIsOpenningTab(window)
+  function popupWindowIsOpenningTab(window)//{{{
   {
     debug('popupWindowIsOpenningTab', window);
 
@@ -532,9 +532,9 @@
       .catch(deferred.reject);
     }, 0);
     return deferred.promise;
-  }
+  }//}}}
 
-  chrome.windows.onCreated.addListener(function(window) {
+  chrome.windows.onCreated.addListener(function(window) {//{{{
     debug('windows.onCreated', window);
 
     (function() {
@@ -548,17 +548,17 @@
     .then(function() {
       return popupWindowIsOpenningTab(window);
     });
-  });
+  });//}}}
 
-  chrome.windows.onRemoved.addListener(function(windowId) {
+  chrome.windows.onRemoved.addListener(function(windowId) {//{{{
     debug('windows.onRemoved', windowId);
 
     if (latestHistory.hasOwnProperty(windowId)) {
       delete latestHistory[windowId];
     }
-  });
+  });//}}}
 
-  function initOptions()
+  function initOptions()//{{{
   {
     debug('initOptions');
 
@@ -585,9 +585,9 @@
       });
     }, 0);
     return deferred.promise;
-  }
+  }//}}}
 
-  function loadOptions()
+  function loadOptions()//{{{
   {
     debug('loadOptions');
 
@@ -602,9 +602,9 @@
       .then(resolve)
       .catch(reject);
     });
-  }
+  }//}}}
 
-  function initialize()
+  function initialize()//{{{
   {
     debug('initialize');
     return new Promise(function(resolve, reject) {
@@ -613,9 +613,9 @@
       p.push(loadOptions());
       Promise.all(p).then(resolve, reject);
     });
-  }
+  }//}}}
 
-  chrome.runtime.onMessage.addListener(function(message) {
+  chrome.runtime.onMessage.addListener(function(message) {//{{{
     debug('chrome.runtime.onMessage.', message);
 
     switch (message.event) {
@@ -623,7 +623,7 @@
       loadOptions();
       break;
     }
-  });
+  });//}}}
 
   initialize();
 })();

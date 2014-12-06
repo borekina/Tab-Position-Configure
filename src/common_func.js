@@ -5,7 +5,46 @@
 (function(window) {
   "use strict";
 
-  window.cloneObject = window.cloneObject || function(obj) {
+  window.getFile = window.getFile || function(path) { // {{{
+    var deferred = Promise.defer();
+    setTimeout(function() {
+      var req = new XMLHttpRequest();
+      req.open('GET', path);
+      req.onreadystatechange = function() {
+        if (req.readyState === 4) {
+          if (req.status === 200) {
+            deferred.resolve(req.responseText);
+          } else {
+            error("Don't get file.", path);
+            deferred.reject();
+          }
+        }
+      };
+      req.send();
+    }, 0);
+    return deferred.promise;
+  };
+  // }}}
+
+  window.setTranslations =//{{{
+    window.setTranslations || function(doc, translationObject) {
+      var deferred = Promise.defer();
+      setTimeout(function() {
+        var els = document.evaluate('//*[@translation]', doc, null, 7, null);
+        var item, name;
+        for (var i = 0, len = els.snapshotLength; i < len; i++) {
+          item = els.snapshotItem(i);
+          name = item.getAttribute('translation');
+          if (translationObject.hasOwnProperty(name)) {
+            item.textContent = chrome.i18n.getMessage(name);
+          }
+        }
+        deferred.resolve();
+      }, 0);
+      return deferred.promise;
+  };//}}}
+
+  window.cloneObject = window.cloneObject || function(obj) {//{{{
     if (toType(obj) !== 'object') {
       return obj;
     }
@@ -16,9 +55,9 @@
       }
     }
     return copy;
-  };
+  };//}}}
 
-  window.getDataType = window.getDataType || function(buf) {
+  window.getDataType = window.getDataType || function(buf) {//{{{
     if (buf[0] === 0xFF && buf[1] === 0xD8 &&
         buf[buf.byteLength - 2] === 0xFF && buf[buf.byteLength - 1] === 0xD9) {
       return 'image/jpeg';
@@ -35,9 +74,9 @@
     } else {
       return 'image/unknown';
     }
-  };
+  };//}}}
 
-  window.getDataURI = window.getDataURI || function(url) {
+  window.getDataURI = window.getDataURI || function(url) {//{{{
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', url, true);
@@ -59,7 +98,7 @@
       xhr.onerror = reject;
       xhr.send();
     });
-  };
+  };//}}}
 
   /**
    * keyCheck
@@ -68,7 +107,7 @@
    * @param {Event} e Event on keypress, keydown or keyup.
    * @return {Object} object of key information.
    */
-  window.keyCheck = window.keyCheck || function(e) {
+  window.keyCheck = window.keyCheck || function(e) {//{{{
     if (e === void 0) {
       throw new Error("Invalid argument. don't get event object.");
     }
@@ -80,7 +119,7 @@
       meta: e.metaKey,
       keyCode: e.keyCode
     };
-  };
+  };//}}}
 
   /**
    * generateKeyString
@@ -89,7 +128,8 @@
    * @param {Object} keyInfo has got return value of keyCheck function.
    * @return {String} result string.
    */
-  window.generateKeyString = window.generateKeyString || function(keyInfo) {
+  window.generateKeyString = window.generateKeyString ||//{{{
+  function(keyInfo) {
     if (toType(keyInfo) !== 'object') {
       throw new Error('Invalid type of argument.');
     }
@@ -156,19 +196,19 @@
     }
 
     return trim(output);
-  };
+  };//}}}
 
   /* base program.
    * http://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
    */
-  window.toType = window.toType || function(obj) {
+  window.toType = window.toType || function(obj) {//{{{
     var type = ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
     if (type === 'global') {
       if (obj === void 0) { return 'undefined'; }
       else if (obj === null) { return 'null'; }
     }
     return type;
-  };
+  };//}}}
 
   /**
    * 日付をフォーマットする
@@ -177,7 +217,7 @@
    * @param  {String} [format] フォーマット
    * @return {String}          フォーマット済み日付
    */
-  window.formatDate = window.formatDate || function(date, format) {
+  window.formatDate = window.formatDate || function(date, format) {//{{{
     if (!format) {
       format = 'YYYY-MM-DD hh:mm:ss.SSS';
     }
@@ -195,19 +235,19 @@
       }
     }
     return format;
-  };
+  };//}}}
 
-  window.trim = window.trim || function(string) {
+  window.trim = window.trim || function(string) {//{{{
     if (toType(string) !== 'string') {
       throw new Error('Argument error. used not string object.');
     }
     return string.replace(/(^\s+)|(\s+$)/g, '');
-  };
+  };//}}}
 
   /*
    * http://stackoverflow.com/questions/1068834/object-comparison-in-javascript
    */
-  window.deepCompare = window.deepCompare || function() {
+  window.deepCompare = window.deepCompare || function() {//{{{
     var i, l, leftChain, rightChain;
 
     function compare2Objects (x, y) {
@@ -319,9 +359,9 @@
     }
 
     return true;
-  };
+  };//}}}
 
-  window.unique = window.unique || function(array) {
+  window.unique = window.unique || function(array) {//{{{
     if (toType(array) !== 'array') {
       throw new Error('Argument error. used not array object.');
     }
@@ -337,9 +377,9 @@
     }
 
     return ret;
-  };
+  };//}}}
 
-  window.arrayEqual = window.arrayEqual || function(x1, x2) {
+  window.arrayEqual = window.arrayEqual || function(x1, x2) {//{{{
     if (x1.length !== x2.length) {
       return false;
     }
@@ -353,30 +393,30 @@
       j++;
     }
     return true;
-  };
+  };//}}}
 
   // ブラウザの応答性は下がる(ビジーウェイト)
-  window.sleep = window.sleep || function(T) {
+  window.sleep = window.sleep || function(T) {//{{{
     var d1 = new Date().getTime();
     var d2 = new Date().getTime();
     while (d2 < d1 + T) {
       d2 = new Date().getTime();
     }
-  };
+  };//}}}
 
-  window.dictSize = window.dictSize || function(dict) {
+  window.dictSize = window.dictSize || function(dict) {//{{{
     var c = 0;
     for (var _ in dict) {
       c++;
     }
     return c;
-  };
+  };//}}}
 
-  window.equals = window.equals || function(l, r) {
+  window.equals = window.equals || function(l, r) {//{{{
     if (toType(l) === toType(r)) {
       throw new Error('Do not equal argument type.');
     }
 
     return window.deepCompare(l, r);
-  };
+  };//}}}
 })(window);
