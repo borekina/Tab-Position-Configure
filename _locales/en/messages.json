@@ -8,11 +8,11 @@
     "description": "Extension Work"
   },
   "openTabTitle": {
-    "message": "Position to open the tab",
+    "message": "The position of new tab.",
     "description": "head in Options."
   },
   "closedTabFocusTitle": {
-    "message": "Tab which you want to focus when a tab is closed",
+    "message": "The tab which you want to focus when a tab is closed.",
     "description": "head in Options."
   },
   "otherTitle": {
@@ -32,11 +32,11 @@
     "description": "Initialize"
   },
   "export": {
-    "message": "export",
+    "message": "Export",
     "description": "export"
   },
   "import": {
-    "message": "import",
+    "message": "Import",
     "description": "import"
   },
   "default": {
@@ -48,11 +48,11 @@
     "description": "First"
   },
   "left": {
-    "message": "Left",
+    "message": " Left",
     "description": "Left"
   },
   "right": {
-    "message": "Right",
+    "message": " Right",
     "description": "Right"
   },
   "last": {
@@ -68,15 +68,15 @@
     "description": "Option"
   },
   "open_tab_current": {
-    "message": "Current tab",
+    "message": "Current Tab",
     "description": "Part of item in Options page."
   },
   "close_tab_current": {
-    "message": "Closed tab",
+    "message": "Closed Tab",
     "description": "Part of item in Options page."
   },
   "other_domain_open": {
-    "message": "If current tab is address of another domain, open the another domain page is new tab.",
+    "message": "If the current tab url differs the link url in opened page, a link in the tab open new tab.",
     "description": "Item in Options page."
   },
   "exclude_url": {
@@ -84,7 +84,7 @@
     "description": "Item in Options page."
   },
   "popup_window_is_open_tab": {
-    "message": "The page of the address unlike a current page opens a new tab",
+    "message": "A popup windows opens a tab.",
     "description": "Item in Options page."
   },
   "storage": {
