@@ -1,1 +1,1 @@
-zip -r package.zip _locales css icons public *.json *.html -x public/javascripts/jasmine-dom-*.js
+zip -r package.zip _locales css icons src *.json *.html
