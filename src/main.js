@@ -270,6 +270,8 @@
 
   function updateTabsCache()
   {
+    debug('updateTabsCache');
+
     return new Promise(function(resolve, reject) {
       getTabsQuery()
       .then(function(results) {
@@ -425,6 +427,8 @@
 
   function getAllWindows(obj)
   {
+    debug('getAllWindows', obj);
+
     return new Promise(function(resolve, reject) {
       chrome.windows.getAll(obj || {}, function(windows) {
         if (chrome.runtime.lastError) {
