@@ -415,10 +415,56 @@
     }, 0);
     return deferred.promise;
   }//}}}
+  
+  function openFocus(tab) {
+    debug('openFocus', tab);
+    var deferred = Promise.defer();
+    setTimeout(function() {
+	  var p = [];
+	  p.push(
+	    new Promise(function(resolve, reject) {
+		  if (myOptions.openedTabFocus === 'default') {
+		    debug('openFocus is skipped.');
+		    reject();
+		    return;
+		  }
+		  resolve(true);
+		})
+	  );
+	  //p.push(getTabsQuery());
+	  
+	  Promise.all(p).then(function(v) {
+	    
+	    function callbackFunc(updated) {
+		  if (chrome.runtime.lastError) {
+		    error(chrome.runtime.lastError.message);
+		    deferred.reject();
+		    return;
+		  }
+		  deferred.resolve(updated);
+	    }
+	    
+	    switch (myOptions.openedTabFocus) {
+		case 'foreground' :
+		  chrome.tabs.update(tab.id, {selected : true}, callbackFunc);
+		  break;
+		case 'background' :
+		  chrome.tabs.update(tab.id, {selected : false}, callbackFunc);
+		  break;
+		default :
+		  deferred.reject();
+		  break;
+		}
+      }, deferred.reject);
+	}, 0);
+	return deferred.promise;
+  }
 
   chrome.tabs.onCreated.addListener(function(tab) {//{{{
     debug('tabs.onCreated', tab);
 
+	openFocus(tab);
+	
     updateTabsCache()
     .then(function() {
       return openPosition(tab);

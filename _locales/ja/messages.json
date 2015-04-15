@@ -15,6 +15,10 @@
     "message": "タブを閉じた後のフォーカス",
     "description": "head in Options."
   },
+  "openedTabFocusTitle": {
+    "message": "新規タブのフォーカス",
+    "description": "head in Options."
+  },
   "otherTitle": {
     "message": "その他",
     "description": "head in Options."
@@ -74,6 +78,14 @@
   "close_tab_current": {
     "message": "閉じたタブの",
     "description": "Part of item in Options page."
+  },
+  "foreground": {
+    "message": "フォアグラウンドで開く",
+    "description": "Foreground"
+  },
+  "background": {
+    "message": "バックグラウンドで開く",
+    "description": "Background"
   },
   "other_domain_open": {
     "message": "現在のタブと違うドメインのページは新しいタブで開く",

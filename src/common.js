@@ -5,6 +5,7 @@
   var defaultValues = {
     'openPosition'    : 'default',
     'closedTabFocus'  : 'default',
+    'openedTabFocus'  : 'default',
     'otherDomainOpen' : false,
     'excludeUrl':
         '^http*://(10.\\d{0,3}|172.(1[6-9]|2[0-9]|3[0-1])|192.168).\\d{1,3}.\\d{1,3}\n' +

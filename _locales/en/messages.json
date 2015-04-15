@@ -15,6 +15,10 @@
     "message": "The tab which you want to focus when a tab is closed.",
     "description": "head in Options."
   },
+  "openedTabFocusTitle": {
+    "message": "The new tab focus is not",
+    "description": "head in Options."
+  },
   "otherTitle": {
     "message": "Other",
     "description": "head in Options."
@@ -74,6 +78,14 @@
   "close_tab_current": {
     "message": "Closed Tab",
     "description": "Part of item in Options page."
+  },
+  "foreground": {
+    "message": "Open foreground",
+    "description": "Foreground"
+  },
+  "background": {
+    "message": "Open background",
+    "description": "Background"
   },
   "other_domain_open": {
     "message": "If the current tab url differs the link url in opened page, a link in the tab open new tab.",
