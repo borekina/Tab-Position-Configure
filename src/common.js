@@ -32,5 +32,5 @@
                            chrome.runtime.getURL('_locales/ja/messages.json') ||
                            chrome.runtime.getURL('_locales/en/messages.json') ;
 
-  window.optionPage = chrome.runtime.getURL('option.html');
+  window.optionPage = chrome.runtime.getURL('options.html');
 })(window, document);
